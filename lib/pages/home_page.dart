@@ -144,6 +144,7 @@ class _HomePageState extends State<HomePage>
         _startShowSpo2Timer();
       }
     } else if (state == AppLifecycleState.paused) {
+      _setPausedTime();
       _stopTimers();
       audio.stopRingtone();
       sensorService.stopWatch();
@@ -165,6 +166,11 @@ class _HomePageState extends State<HomePage>
     // socketservice.delegate = null;
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  Future<void> _setPausedTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString('paused_time', WidgetUtil.dateFormat(DateTime.now(), 'yyyy-MM-dd H:m:ss'));
   }
 
   Future<void> _checkAccept() async {
@@ -196,6 +202,26 @@ class _HomePageState extends State<HomePage>
 
     socketservice.io.emit("clients_status", [AppManager.settings['addressGroup']]);
     _checkCalled();
+  }
+
+  Future<void> _checkTalkHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final pausedTime = prefs.getString('paused_time');
+    if (pausedTime == null) {
+      return;
+    }
+
+    _talkLogs.clear();
+    await _getData(AppManager.delegatorCode, start: pausedTime);
+    if (_talkLogs.isEmpty) {
+      return;
+    }
+    setState(() {
+      _showHistory = true;
+      _showCalledHistory = false;
+      _showCallHistory = false;
+      _historyPage = 1;
+    });
   }
 
   Future<dynamic> initCurrentCall() async {
@@ -300,7 +326,10 @@ class _HomePageState extends State<HomePage>
     if (isCalled) {
       _showCalled();
       audio.ringtone();
+      return;
     }
+
+    _checkTalkHistory();
   }
 
   Future<void> _showCalled() async {
@@ -1325,25 +1354,29 @@ class _HomePageState extends State<HomePage>
     _getCallLog(code);
   }
 
-  Future<void> _getData(String code) async {
+  Future<void> _getData(String code, {String? start}) async {
     setState(() {
       _loading = true;
     });
 
     final dio = Dio();
-    var url = '${AppDefine.baseURL}app/talk_history';
+    var url = '${AppDefine.baseURL}app/talk_history2';
     var id1 = AppManager.myId;
+    var formData = {
+      'master_id': AppManager.settings['MCSGROUPCODE'],
+      // 'code': code,
+      // 'id1': id1,
+      'token': AppDefine.getDelegatorToken(),
+      'page': _historyPage.toString()
+    };
+    if (start != null) {
+      formData['start'] = start;
+    }
 
     var data = await dio
         .post(
       url,
-      data: FormData.fromMap({
-        'master_id': AppManager.settings['MCSGROUPCODE'],
-        'code': code,
-        'id1': id1,
-        'token': AppDefine.getDelegatorToken(),
-        'page': _historyPage.toString()
-      }),
+      data: FormData.fromMap(formData),
       options: Options(
         headers: {
           "Accept": "application/json",
@@ -1575,9 +1608,14 @@ class _HomePageState extends State<HomePage>
                                           ),
                                           Row(
                                             children: [
-                                              WidgetUtil.middleText(address == null ? _talkLogs[index]['name'] : address.name),
+                                              WidgetUtil.middleText(_talkLogs[index]['user_name']),
                                               const SizedBox(width: 12,),
-                                              WidgetUtil.middleText(address == null ? '' : address.userName),
+                                              WidgetUtil.middleText(_talkLogs[index]['office_name']),
+                                            ],
+                                          ),
+                                          Row(
+                                            children: [
+                                              WidgetUtil.middleText(_talkLogs[index]['staff_name']),
                                             ],
                                           ),
                                         ],
