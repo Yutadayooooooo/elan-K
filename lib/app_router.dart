@@ -13,7 +13,6 @@ import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '/calling_page.dart';
 import '/pages/login/login_page.dart';
 import '/pages/setting/setting_page.dart';
 import '/pages/setting/setting_about_page.dart';
@@ -33,8 +32,6 @@ class AppRoute {
   static const settingNotifyGroupPage = '/setting/notify_group';
   static const settingAccountListPage = '/setting/account_list';
   static const webviewPage = '/webview';
-
-  static const callingPage = '/calling_page';
 
 
   static Future<GoRouter> createRouter(bool isInitialize, bool isLogin) async {

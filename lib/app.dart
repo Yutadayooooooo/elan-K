@@ -55,24 +55,7 @@ Future<void> receiveFirebaseCallMessageBackground(RemoteMessage message) async {
     await Eraser.clearAppNotificationsByTag('callnotification');
   });
   await FlutterCallkitIncoming.endAllCalls();
-  // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  // final callerId = message.data['caller_id'].toString();
-  // var callCount = 0;
-  // var calls = await FlutterCallkitIncoming.activeCalls();
-  // if (calls is List) {
-  //   for (var i = 0; i < calls.length; i++) {
-  //     print(calls[i]);
-  //     if (callerId == calls[i]['id']) {
-  //       await FlutterCallkitIncoming.endCall(callerId);
-  //     } else {
-  //       callCount += 1;
-  //     }
-  //   }
-  // }
-  // if (callCount > 0) {
-  //   print('calling $callCount  *******************************************************');
-  //   return;
-  // }
+
   showCallkitIncoming(message.data);
 }
 
@@ -84,29 +67,7 @@ Future<void> listenFirebaseRemoteMessage(RemoteMessage message) async {
     final cancelId = message.data['caller_id'].toString().replaceAll('_cancel', '');
     await hideCallkitIncoming(cancelId);
   } else if (message.data['title'] == 'call') {
-    // final callerId = message.data['caller_id'].toString();
-    // var callCount = 0;
-    // var calls = await FlutterCallkitIncoming.activeCalls();
-    // if (calls is List) {
-    //   for (var i = 0; i < calls.length; i++) {
-    //     print(calls[i]);
-    //     if (callerId == calls[i]['id']) {
-    //       await FlutterCallkitIncoming.endCall(callerId);
-    //     } else {
-    //       callCount += 1;
-    //     }
-    //   }
-    // }
-    // if (callCount > 0) {
-    //   print('calling $callCount  *******************************************************');
-    //   return;
-    // }
-    // Future.delayed(const Duration(milliseconds: 300), () async {
-    //   showCallkitIncoming(message.data);
-    // });
   }
-  //   _currentUuid = _uuid.v4();
-  //   showCallkitIncoming(_currentUuid!);
 }
 
 Future<void> hideCallkitIncoming(cancelId) async {
