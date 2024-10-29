@@ -63,7 +63,7 @@ class _HomePageState extends State<HomePage>
   Timer? _buttonCallTimer;
   Timer? _webLiveImageTimer;
   Timer? _showSpo2Timer;
-  String _debug = '';
+  String _debug = 'dbug中\n';
 
   @override
   void initState() {
@@ -168,21 +168,21 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> _checkAccept() async {
-    // var acceptId = '';
-    // var calls = await FlutterCallkitIncoming.activeCalls();
-    // if (calls is List) {
-    //   if (calls.isNotEmpty) {
-    //     print('DATA: $calls');
-    //     acceptId = calls[0]['id'].toString();
-    //   } else {
-    //     print('calls is empty');
-    //   }
-    // }
+    var calls = await FlutterCallkitIncoming.activeCalls();
+    if (calls is List) {
+      if (calls.isNotEmpty) {
+        print('DATA: $calls');
+        AppManager.acceptId = calls[0]['id'].toString();
+      } else {
+        print('calls is empty');
+      }
+    }
+    await FlutterCallkitIncoming.endAllCalls();
     _debug += 'check accept' + '\n';
-    final prefs = await SharedPreferences.getInstance();
-    var acceptId = prefs.getString('accept_id');
-    _debug += 'check accept ${acceptId}' + '\n';
-    print('check accept ${acceptId}');
+    // final prefs = await SharedPreferences.getInstance();
+    // var acceptId = prefs.getString('accept_id');
+    _debug += 'check accept ${AppManager.acceptId}' + '\n';
+    print('check accept ${AppManager.acceptId}');
     if (AppManager.acceptId.isNotEmpty) {
       final address = context.read<AddressStore>().find(AppManager.acceptId);
       if (address != null) {
@@ -194,6 +194,7 @@ class _HomePageState extends State<HomePage>
       _ready = true;
     });
 
+    socketservice.io.emit("clients_status", [AppManager.settings['addressGroup']]);
     _checkCalled();
   }
 
@@ -243,16 +244,6 @@ class _HomePageState extends State<HomePage>
     // onStreamTypeChanged(selectedStreamType);
     if (!mounted) return;
   }
-
-  // Future<void> onStreamTypeChanged(StreamType? streamType) async {
-  //   int minVol = (await RealVolume.getMinVol(streamType)) ?? 0;
-  //   int maxVol = (await RealVolume.getMaxVol(streamType)) ?? 10;
-  //   double currentVol = (await RealVolume.getCurrentVol(streamType)) ?? 0;
-  //   // print(minVol.toString() + " " + maxVol.toString() + " " + currentVol.toString());
-  //   if (currentVol >= 1.0) {
-  //     await RealVolume.setVolume(currentVol - 0.05);
-  //   }
-  // }
 
   Future<void> _requestPermission() async {
     if (Platform.isAndroid) {
@@ -1239,20 +1230,6 @@ class _HomePageState extends State<HomePage>
     socketservice.startConnectTimer();
     if (AppDefine.useWebLiveImage) {
       _startWebLiveImageTimer();
-    }
-  }
-
-  Future<void> _toMeet() async {
-    var url = 'frinursemeet://';
-    if (Platform.isAndroid) {
-      url += 'meet/?room=';
-    }
-    url += AppManager.delegatorCode;
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      throw 'Could not launch $url';
     }
   }
 
