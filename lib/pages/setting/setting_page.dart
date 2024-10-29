@@ -1,0 +1,678 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:ami/app_router.dart';
+import 'package:ami/pages/setting/setting_about_page.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../app_define.dart';
+import '../../notifiers/address_notifier.dart';
+import '../../notifiers/app_notifier.dart';
+import '/app_manager.dart';
+import '/helpers/widget_helper.dart';
+
+class SettingPage extends StatefulWidget {
+  @override
+  _SettingPageState createState() => _SettingPageState();
+}
+
+class _SettingPageState extends State<SettingPage> {
+  bool _load = false;
+  bool _savedSwitch = false;
+
+  final _listHeight = 44.0;
+  final TextStyle _titleTextStyle1 = const TextStyle(
+    fontSize: 14,
+  );
+  final TextStyle _titleTextStyle2 = const TextStyle(fontSize: 14, color: Colors.blue);
+
+  @override
+  void initState() {
+    super.initState();
+    // WidgetsBinding.instance.addObserver(this);
+    print('[DEBUG PRINT] setting initState');
+    AppManager.status = AppStatus.None;
+    AppManager.talkId1 = '';
+    AppManager.talkId2 = '';
+    AppManager.holdId = '';
+    AppManager.holdedId = '';
+  }
+
+  @override
+  Future<void> didChangeDependencies() async {
+    super.didChangeDependencies();
+    print('[DEBUG PRINT] setting didChangeDependencies');
+    AppManager.setStatusBarHidden(true);
+  }
+
+  Future<void> _logout() async {
+    var value = await showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('確認'),
+        content: const Text('ログアウトしますか？'),
+        actions: <Widget>[
+          SimpleDialogOption(
+            child: const Text('はい'),
+            onPressed: () {
+              Navigator.pop(context, "1");
+            },
+          ),
+          SimpleDialogOption(
+            child: const Text('いいえ'),
+            onPressed: () {
+              Navigator.pop(context, "0");
+            },
+          ),
+        ],
+      ),
+    );
+    switch (value) {
+      case "1":
+        var prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('login', false);
+        await prefs.setBool('manager', false);
+        await prefs.remove('codes');
+        await prefs.remove('address');
+        await prefs.remove('authreceives');
+        context.read<AddressStore>().clear();
+        context.go(AppRoute.loginPage);
+        break;
+      case "0":
+        break;
+    }
+  }
+
+  Future<void> _getAddress() async {
+    var response = await _requestAddress();
+    var prefs = await SharedPreferences.getInstance();
+    var addressKey = "ADDRESS";
+    if (AppDefine.amiApp) {
+      addressKey = "address";
+    }
+    await prefs.setString('address', json.encode(response[addressKey]));
+    _showDialog(1);
+  }
+
+  String _getAddressURL() {
+    if (AppDefine.amiApp) {
+      if (AppManager.isManager) {
+        return "${AppDefine.baseURL}app/staff_address_list?code=${AppManager.settings['DELEGATORCODE']}&token=${AppManager.settings['api_token']}";
+      }
+      var mstId = AppManager.settings['MYID'].replaceAll(AppManager.settings['DELEGATORCODE'] + "_", "");
+      return "${AppDefine.baseURL}app/address_list?code=${AppManager.settings['DELEGATORCODE']}&mst_id=$mstId&token=${AppManager.settings['api_token']}";
+    }
+
+    var token = AppDefine.getRMSToken();
+    var url = 'https://' +
+        AppManager.settings['MCSURL'] +
+        '/json/appaddresslist?gcd=' +
+        AppManager.settings['MCSGROUPCODE'] +
+        '&ccd=' +
+        AppManager.settings['MCSCLINICCODE'] +
+        '&group=' +
+        AppManager.settings['addressGroup'] +
+        '&id=' +
+        AppManager.settings['myId'] +
+        '&token=' +
+        token;
+    return url;
+  }
+
+  Future<dynamic> _requestAddress() async {
+    setState(() {
+      _load = true;
+    });
+    var url = _getAddressURL();
+    print(url);
+
+    final dio = Dio();
+    var data = await dio.get(
+        url,
+    ).then((response) {
+      print(response.data);
+      return response.data;
+    }).catchError((err) {
+      print(err);
+      return null;
+    });
+
+    setState(() {
+      _load = false;
+    });
+    return data;
+  }
+
+  Future<void> _getRingtone() async {
+    var response = await _requestRingtone();
+    print(response);
+    if (response['status'] != 'OK') {
+      _showDialog(2);
+      return;
+    }
+    AppManager.ringtones = [];
+    var ringtones = response['ringtones'];
+    for (var i = 0; i < ringtones.length; i++) {
+      AppManager.ringtones.add([ringtones[i]['id'].toString(), ringtones[i]['name'].toString()]);
+    }
+    // var result = await Navigator.of(context)
+    //     .push(MaterialPageRoute(builder: (context) => SettingSelectPage(keyName: 'RINGTONE', value: AppManager.appsettings['RINGTONE'])));
+    // AppManager.appsettings['RINGTONE'] = result;
+    setState(() {
+      _savedSwitch = !_savedSwitch;
+    });
+  }
+
+  String _ringtoneURL() {
+    if (AppDefine.amiApp) {
+      return '${AppDefine.baseURL}app/ringtone_list?code=${AppManager.settings["DELEGATORCODE"]}&token=${AppManager.settings["api_token"]}';
+    }
+    var token = AppDefine.getRMSToken();
+    var url = 'https://${AppManager.settings['MCSURL']}/json/appringtonelist?gcd=${AppManager.settings['MCSGROUPCODE']}&ccd=${AppManager.settings['MCSCLINICCODE']}&token=${token}';
+    return url;
+  }
+
+  Future<dynamic> _requestRingtone() async {
+    setState(() {
+      _load = true;
+    });
+    var url = _ringtoneURL();
+    print(url);
+
+    final dio = Dio();
+    var data = await dio.get(
+      url,
+    ).then((response) {
+      print(response.data);
+      return response.data;
+    }).catchError((err) {
+      print(err);
+      return null;
+    });
+
+    setState(() {
+      _load = false;
+    });
+
+    return data;
+  }
+
+  Future<void> _toInfoVideoPage() async {
+    await context.push(AppRoute.settingInfoVideoPage);
+    setState(() {
+      _savedSwitch = !_savedSwitch;
+    });
+  }
+
+  Future<void> _toInfoPhotoPage() async {
+    await context.push(AppRoute.settingInfoPhotoPage);
+    setState(() {
+      _savedSwitch = !_savedSwitch;
+    });
+  }
+
+  Future<void> _toNotifyGroupPage() async {
+    await context.push(AppRoute.settingNotifyGroupPage);
+    setState(() {
+      _savedSwitch = !_savedSwitch;
+    });
+  }
+
+  Future<void> _toAccountListPage() async {
+    await context.push(AppRoute.settingAccountListPage);
+    setState(() {
+      _savedSwitch = !_savedSwitch;
+    });
+  }
+
+  List<Widget> _listContainers() {
+    var mode = 'user';
+    if (AppManager.isManager) {
+      if (AppManager.selectCode.isEmpty) {
+        mode = 'staff1';
+      } else {
+        mode = 'staff2';
+      }
+    }
+    var _separator = separator();
+
+    var label = AppDefine.amiApp ? '契約者名' : '医療機関';
+    var listContainers = [
+      _separator,
+      dispListContainer(label, AppManager.settings['MCSCLINICNAME']),
+      tapListContainer('ログアウト', () {
+        print('logout');
+        _logout();
+      }),
+    ];
+
+    listContainers.addAll([
+      _separator,
+      dispListContainer('自分のID', AppManager.settings['myId']),
+      tapListContainer('リスト更新', () {
+        _getAddress();
+      }),
+    ]);
+/*
+    if (AppManager.settings['MCSTYPE'] == '4') {
+      listContainers.addAll([_separator, abountListContainer()]);
+      return listContainers;
+    }
+
+    if (AppDefine.amiApp) {
+      listContainers.addAll([
+        _separator,
+        dispListContainer('自分のID', AppManager.settings['myId']),
+        tapListContainer('リスト更新', () {
+          _getAddress();
+        }),
+      ]);
+    } else {
+      listContainers.addAll([
+        _separator,
+        dispListContainer('自分のID', AppManager.settings['myId']),
+        nextListContainer('グループ', AppManager.settings['group'], () async {
+          var result = await Navigator.of(context)
+              .push(MaterialPageRoute(builder: (context) => SettingInputPage(keyName: 'group', value: AppManager.settings['group'])));
+          if (result != null) {
+            AppManager.settings['group'] = result;
+          }
+          setState(() {
+            _savedSwitch = !_savedSwitch;
+          });
+        }),
+        nextListContainer('住所録グループ', AppManager.settings['addressGroup'],
+                () async {
+          var result = await Navigator.of(context)
+              .push(MaterialPageRoute(builder: (context) => SettingInputPage(keyName: 'addressGroup', value: AppManager.settings['addressGroup'])));
+          if (result != null) {
+            AppManager.settings['addressGroup'] = result;
+          }
+          setState(() {
+            _savedSwitch = !_savedSwitch;
+          });
+        }),
+        tapListContainer('住所録取得', () {
+          _getAddress();
+        }),
+      ]);
+    }
+
+    var dispType = AppManager.settings['DISPTYPE'];
+    var anminModeFlg = AppManager.settings['ANMINMODEFLG'];
+    listContainers.addAll([
+      _separator,
+      nextListContainer('表示', AppManager.dispType(dispType), () async {
+        var result = await Navigator.of(context)
+            .push(MaterialPageRoute(builder: (context) => SettingSelectPage(keyName: 'DISPTYPE', value: AppManager.settings['DISPTYPE'])));
+        AppManager.settings['DISPTYPE'] = result;
+        setState(() {
+          _savedSwitch = !_savedSwitch;
+        });
+      }),
+      nextListContainer('表示数', AppManager.displyNumber(AppManager.appsettings['DISPLAYNUM']), () async {
+        var result = await Navigator.of(context)
+            .push(MaterialPageRoute(builder: (context) => SettingSelectPage(keyName: 'DISPLAYNUM', value: AppManager.appsettings['DISPLAYNUM'])));
+        AppManager.appsettings['DISPLAYNUM'] = result;
+        setState(() {
+          _savedSwitch = !_savedSwitch;
+        });
+      }),
+      switchListContainer('自動応答', 'AUTO_RECEIVE'),
+    ]);
+
+    if (mode == 'staff2') {
+      listContainers.add(switchListContainer('通話権限', 'AUTH_RECEIVE'));
+    }
+
+    if (dispType == '1' && anminModeFlg == '1') {
+      listContainers.add(
+        switchListContainer('安眠モード', 'SLEEP_MODE'),
+      );
+    }
+
+    if (dispType == '1') {
+      listContainers
+          .add(nextListContainer('明るさ', AppManager.sleepModeBrightness(), () async {
+        var result = await Navigator.of(context)
+            .push(MaterialPageRoute(builder: (context) => SettingSelectPage(keyName: 'SLEEPMODEBRIGHTNESS', value: AppManager.appsettings['SLEEPMODEBRIGHTNESS'])));
+        AppManager.appsettings['SLEEPMODEBRIGHTNESS'] = result;
+        setState(() {
+          _savedSwitch = !_savedSwitch;
+        });
+      }));
+    }
+    if (dispType == '1' || dispType == '2') {
+      listContainers
+          .add(nextListContainer('時計', AppManager.clockMode(), () async {
+        var result = await Navigator.of(context)
+            .push(MaterialPageRoute(builder: (context) => SettingSelectPage(keyName: 'SLEEP_CLOCK', value: AppManager.appsettings['SLEEP_CLOCK'])));
+        AppManager.appsettings['SLEEP_CLOCK'] = result;
+        setState(() {
+          _savedSwitch = !_savedSwitch;
+        });
+      }));
+    }
+
+    if (dispType == '0') {
+      listContainers.addAll([
+        // nextListContainer('自動応答個別設定', '', () async {
+        //   await Navigator.of(context)
+        //       .push(MaterialPageRoute(builder: (context) => SettingUserPage()));
+        // }),
+        // _separator,
+        nextListContainer('センサー', '', () async {
+          // final args = SettingArguments();
+          // args.key = 'SENSOR';
+          // args.value = '';
+          var result = await Navigator.of(context)
+              .push(MaterialPageRoute(builder: (context) => SettingMultiSelectPage(keyName: 'SENSOR', value: AppManager.settings['DISPTYPE'])));
+          // await Navigator.of(context)
+          //     .pushNamed('/settingmultiselect', arguments: args);
+          // AppManager.settings['DISPTYPE'] = result;
+          // setState(() {_savedSwitch = !_savedSwitch;});
+        }),
+      ]);
+    }
+
+    if (dispType == '2' && AppDefine.useWebLiveImage) {
+      var webLiveImageInterval = AppManager.appsettings['WEBLIVEIMAGEINTERVAL'];
+      listContainers.addAll([
+        nextListContainer('撮影データ更新間隔', AppManager.webLiveImageIntervalText(webLiveImageInterval), () async {
+          var result = await Navigator.of(context)
+              .push(MaterialPageRoute(builder: (context) => SettingSelectPage(keyName: 'WEBLIVEIMAGEINTERVAL', value: webLiveImageInterval)));
+          AppManager.appsettings['WEBLIVEIMAGEINTERVAL'] = result;
+          setState(() {
+            _savedSwitch = !_savedSwitch;
+          });
+        }),
+      ]);
+    }
+
+    if (Platform.isIOS && dispType == '1') {
+      listContainers.addAll([
+        switchListContainer('ボリューム呼び出し', 'VOLUME_CALL'),
+      ]);
+    }
+
+    if (mode != 'staff1') {
+      listContainers.addAll([
+        _separator,
+        nextListContainer('着信音', '', () {
+          _getRingtone();
+        }),
+        _separator,
+      ]);
+    } else {
+      listContainers.add(_separator);
+    }
+    if (dispType == '1') {
+      listContainers.add(
+        switchListContainer('ホーム画面の時計', 'CLOCKDISP'),
+      );
+    }
+
+*/
+    if (AppManager.isManager) {
+      listContainers.addAll([
+        _separator,
+        nextListContainer('通話権限', '', _toNotifyGroupPage),
+        nextListContainer('アカウント一覧', '', _toAccountListPage),
+      ]);
+    }
+
+    if (AppDefine.amiApp) {
+      // listContainers.add(switchListContainer('表示設定', 'CALLSTATUSDISP'));
+      if (mode == 'user' || mode == 'staff2') {
+        listContainers.addAll([
+          _separator,
+          nextListContainer('お知らせ動画', '', _toInfoVideoPage),
+          nextListContainer('スライドショー', '', _toInfoPhotoPage),
+          nextListContainer('メッセージ配信', '', () async {
+            await context.push(AppRoute.settingInfoMessagePage);
+          }),
+        ]);
+      }
+    }
+
+    listContainers.addAll([_separator, abountListContainer()]);
+
+    return listContainers;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+
+    return PopScope(
+      onPopInvoked: (didPop) {
+        if (context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        appBar: WidgetUtil.appBar('設定',
+          backgroundColor: WidgetUtil.iosNavbarBG,
+          foregroundColor: Colors.black,
+        ),
+        body: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            Container(
+              color: const Color.fromARGB(255, 240, 240, 240),
+              child: ListView(
+                children: _listContainers(),
+              ),
+            ),
+            if (_load)
+              Align(
+                alignment: FractionalOffset.center,
+                child: Container(
+                  color: Colors.grey.withOpacity(0.3),
+                  child: const Padding(
+                    padding: EdgeInsets.all(5.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget separator() {
+    return SizedBox(height: 20,);
+    return Container(
+      color: Color.fromARGB(255, 240, 240, 240),
+      padding: EdgeInsets.all(10.0),
+    );
+  }
+
+  Widget dispListContainer(String title, String subtitle) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(color: Color.fromARGB(255, 220, 220, 220)),
+        ),
+      ),
+      height: _listHeight,
+      // margin: const EdgeInsets.all(0.0),
+      padding: const EdgeInsets.all(10.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: _titleTextStyle1,
+          ),
+          Text(
+            subtitle,
+            style: _titleTextStyle1,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget tapListContainer(String title, Function ontap) {
+    return InkWell(
+      onTap: () {
+        ontap();
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            bottom: new BorderSide(color: Color.fromARGB(255, 220, 220, 220)),
+          ),
+        ),
+        height: _listHeight,
+        padding: const EdgeInsets.all(10.0),
+        child: Text(
+          title,
+          style: _titleTextStyle2,
+        ),
+      ),
+    );
+  }
+
+  Widget nextListContainer(String title, String subtitle, Function ontap) {
+    return InkWell(
+      onTap: () {
+        ontap();
+      },
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            bottom: BorderSide(color: Color.fromARGB(255, 220, 220, 220)),
+          ),
+        ),
+        height: _listHeight,
+        // margin: const EdgeInsets.all(0.0),
+        padding: const EdgeInsets.all(10.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: _titleTextStyle1,
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text(
+                  subtitle,
+                  style: _titleTextStyle1,
+                ),
+                const Icon(
+                  Icons.arrow_forward_ios,
+                  color: Colors.grey,
+                  size: 18.0,
+                )
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget switchListContainer(String title, String key) {
+    var isSwtich = false;
+    if (key == 'AUTO_RECEIVE' || key == 'VOLUME_CALL' || key == 'CLOCKDISP') {
+      if (AppManager.appsettings[key] == '1') {
+        isSwtich = true;
+      }
+    } else if (key == 'SLEEP_MODE' || key == 'CALLSTATUSDISP') {
+      if (AppManager.appsettings[key] == '1') {
+        isSwtich = true;
+      }
+    } else if (key == 'AUTH_RECEIVE') {
+      if (AppManager.authReceives.keys.contains(AppManager.selectCode)) {
+        if (AppManager.authReceives[AppManager.selectCode] == '1') {
+          isSwtich = true;
+        }
+      }
+    }
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(color: Color.fromARGB(255, 220, 220, 220)),
+        ),
+      ),
+      height: _listHeight,
+      padding: const EdgeInsets.all(10.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: _titleTextStyle1,
+          ),
+          CupertinoSwitch(
+            value: isSwtich,
+            onChanged: (value) {
+              print(value);
+              String val = '0';
+              if (value) {
+                val = '1';
+              }
+              if (key == 'AUTO_RECEIVE' || key == 'VOLUME_CALL' || key == 'CLOCKDISP') {
+                AppManager.saveAppSetting(key, val);
+              }
+              else if (key == 'SLEEP_MODE' || key == 'CALLSTATUSDISP') {
+                AppManager.saveAppSetting(key, val);
+              }
+              else if (key == 'AUTH_RECEIVE') {
+                AppManager.saveAuthReceives(val);
+              }
+
+              setState(() {
+                _savedSwitch = !_savedSwitch;
+              });
+            },
+            activeColor: Colors.red,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget abountListContainer() {
+    return nextListContainer("このアプリについて", '', () async {
+      await context.push(AppRoute.settingAboutPage);
+    });
+  }
+
+  Future _showDialog(type) async {
+    var message = 'ログイン情報を確認してください。';
+    if (type == 1) {
+      message = 'リストを更新しました。';
+    } else if (type == 2) {
+      message = '着信音情報を取得できません。';
+    }
+    var _ = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('確認'),
+          content: Text(message),
+          actions: <Widget>[
+            SimpleDialogOption(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
