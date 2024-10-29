@@ -76,6 +76,7 @@ with WidgetsBindingObserver, SocketIOServiceDelegate,
       AppManager.setStatusBarHidden(false);
       if (AppManager.callId.isNotEmpty) {
         socketservice.io.emit("calling?", [AppManager.selectUser!.id]);
+        AppManager.callId = '';
       }
       if (AppManager.acceptId.isNotEmpty) {
         socketservice.io.emit("calling?", [AppManager.selectUser!.id]);
@@ -164,7 +165,6 @@ with WidgetsBindingObserver, SocketIOServiceDelegate,
   Future<void> _call() async {
     await audio.call();
     _setAppStatus(AppStatus.Call);
-    AppManager.callId = '';
     print('call to ->${AppManager.selectUser!.id}');
     socketservice.io.emit("call", [AppManager.selectUser!.id]);
 
