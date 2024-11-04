@@ -585,7 +585,7 @@ class _HomePageState extends State<HomePage>
 
     String liveText = '';
     Uint8List bytes = Uint8List(0);
-    var imageName = 'assets/images/status/dummy.png';
+    var imageName = 'assets/images/status/offline.png';
     if (address.call == 1) {
       imageName = 'assets/images/status/addr_call.png';
     } else if (address.called == 1) {
@@ -683,6 +683,11 @@ class _HomePageState extends State<HomePage>
                 fit: StackFit.expand,
                 children: [
                   imageWidget,
+                  if (address.status == -1)
+                    Opacity(
+                      opacity: 0.8,
+                      child: Container(color: Colors.grey,),
+                    ),
                   Positioned(
                     top: 0,
                     left: 2.0,
