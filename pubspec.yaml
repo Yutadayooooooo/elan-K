@@ -78,9 +78,35 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.14.1
+  flutter_native_splash: ^2.4.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
+
+flutter_native_splash:
+  color: '#f5f5f0'
+  fullscreen: true
+  background_image: 'assets/images/splash.png'
+  background_image_android: 'assets/images/splash.png'
+  background_image_ios: 'assets/images/splash.png'
+  image: 'assets/images/splash.png'
+  ios_content_mode: scaleAspectFill
+  android: true
+  ios: false
+  web: false
+
+# flutter pub run flutter_native_splash:create
+
+flutter_icons:
+  # ~/fvm/versions/3.0.5/bin/flutter pub run flutter_launcher_icons:main
+  #  image_path: "assets/images/icon-128x128.png"
+  image_path_android: "assets/images/icon/icon.png"
+  image_path_ios: "assets/images/icon/icon.png"
+  adaptive_icon_background: "assets/images/icon/background.png"
+  adaptive_icon_foreground: "assets/images/icon/foreground.png"
+  android: true # can specify file name here e.g. "ic_launcher"
+  ios: false # can specify file name here e.g. "My-Launcher-Icon"
 
 # The following section is specific to Flutter packages.
 flutter:
