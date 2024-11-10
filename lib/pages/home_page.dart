@@ -1994,17 +1994,18 @@ class _HomePageState extends State<HomePage>
                               ),
                             ],
                           const SizedBox(width: 8,),
-                          Padding(
-                            padding: const EdgeInsets.only(
-                                left: 4.0, right: 4.0, top: 8.0),
-                            child: Text(
-                              'Ver. $_version',
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: Colors.white,
+                          if (!_showHistory && !_showCalledHistory && !_showCallHistory)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                  left: 4.0, right: 4.0, top: 8.0),
+                              child: Text(
+                                'Ver. $_version',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
-                          ),
                           GestureDetector(
                             onTap: () {
                               _toSetting();
