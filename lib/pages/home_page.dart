@@ -1515,228 +1515,232 @@ class _HomePageState extends State<HomePage>
           return Stack(
             fit: StackFit.expand,
             children: [
-              !_ready ? Center(child: CircularProgressIndicator()) : Consumer<AddressStore>(
-                builder: (context, addressStore, _) {
-                  if (_showCalledHistory) {
-                    final calledList = addressStore.calledList();
+              !_ready ? Center(child: CircularProgressIndicator()) : Padding(
+                padding: const EdgeInsets.only(bottom: iconSize),
+                child: Consumer<AddressStore>(
+                  builder: (context, addressStore, _) {
+                    if (_showCalledHistory) {
+                      final calledList = addressStore.calledList();
 
-                    return ListView.builder(
-                      itemCount: calledList.length,
-                      // + (_hasMoreTalkLogs ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index < calledList.length) {
-                          final udid = calledList[index].id;
-                          var address = calledList[index];
-                          return Column(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              WidgetUtil.middleText(WidgetUtil.dateFormat(address.calledTime, 'M/d H:m')),
-                                              const SizedBox(width: 12,),
-                                              WidgetUtil.middleText(''),
-                                            ],
-                                          ),
-                                          Row(
-                                            children: [
-                                              WidgetUtil.middleText(address.name),
-                                              const SizedBox(width: 12,),
-                                              WidgetUtil.middleText(address.userName),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Container(
-                                      width: 60,
-                                      child: GestureDetector(
-                                        onTap: () {
-                                          _selectAddressConfirm(address);
-                                        },
-                                        child: Image.asset(
-                                          'assets/images/status/addr_called.png',
-                                          width: 60,
-                                          height: 40,
+                      return ListView.builder(
+                        itemCount: calledList.length,
+                        // + (_hasMoreTalkLogs ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (index < calledList.length) {
+                            final udid = calledList[index].id;
+                            var address = calledList[index];
+                            return Column(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                WidgetUtil.middleText(WidgetUtil.dateFormat(address.calledTime, 'M/d H:m')),
+                                                const SizedBox(width: 12,),
+                                                WidgetUtil.middleText(''),
+                                              ],
+                                            ),
+                                            Row(
+                                              children: [
+                                                WidgetUtil.middleText(address.name),
+                                                const SizedBox(width: 12,),
+                                                WidgetUtil.middleText(address.userName),
+                                              ],
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                    )
-                                  ],
+                                      Container(
+                                        width: 60,
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            _selectAddressConfirm(address);
+                                          },
+                                          child: Image.asset(
+                                            'assets/images/status/addr_called.png',
+                                            width: 60,
+                                            height: 40,
+                                          ),
+                                        ),
+                                      )
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              Divider(
-                                height: 2,
-                              ), // 区切り線を追加
-                            ],
-                          );
-                        }
-                        if (_hasMoreTalkLogs) {
-                          // 追加の商品を取得中
-                          // _fetchProducts();
-                          return Center(child: CircularProgressIndicator());
-                        }
-                        return SizedBox();
-                      },
-                    );
-                  }
+                                Divider(
+                                  height: 2,
+                                ), // 区切り線を追加
+                              ],
+                            );
+                          }
+                          if (_hasMoreTalkLogs) {
+                            // 追加の商品を取得中
+                            // _fetchProducts();
+                            return Center(child: CircularProgressIndicator());
+                          }
+                          return SizedBox();
+                        },
+                      );
+                    }
 
-                  if (_showHistory) {
-                    return ListView.builder(
-                      itemCount: _talkLogs.length,
-                      // + (_hasMoreTalkLogs ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index < _talkLogs.length) {
-                          final udid = _talkLogs[index]['id'];
-                          var address = context.read<AddressStore>().find(udid);
-                          return Column(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              WidgetUtil.middleText(_talkLogs[index]['start']),
-                                              const SizedBox(width: 12,),
-                                              WidgetUtil.middleText(_talkLogs[index]['duration']),
-                                            ],
-                                          ),
-                                          Row(
-                                            children: [
-                                              WidgetUtil.middleText(_talkLogs[index]['user_name']),
-                                              const SizedBox(width: 12,),
-                                              WidgetUtil.middleText(_talkLogs[index]['office_name']),
-                                            ],
-                                          ),
-                                          Row(
-                                            children: [
-                                              WidgetUtil.middleText(_talkLogs[index]['staff_name']),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Container(
-                                      width: 30,
-                                      child: address == null ? Container() : GestureDetector(
-                                        onTap: () {
-                                          _selectAddressConfirm(address);
-                                        },
-                                        child: Image.asset(
-                                          'assets/images/bottom_navi/phone3.png',
-                                          width: 40,
-                                          height: 40,
+                    if (_showHistory) {
+                      return ListView.builder(
+                        itemCount: _talkLogs.length,
+                        // + (_hasMoreTalkLogs ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (index < _talkLogs.length) {
+                            final udid = _talkLogs[index]['id'];
+                            var address = context.read<AddressStore>().find(udid);
+                            return Column(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
+                                  color: WidgetUtil.colorFromHex(_talkLogs[index]['color']),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                WidgetUtil.middleText(_talkLogs[index]['start']),
+                                                const SizedBox(width: 12,),
+                                                WidgetUtil.middleText(_talkLogs[index]['duration']),
+                                              ],
+                                            ),
+                                            Row(
+                                              children: [
+                                                WidgetUtil.middleText(_talkLogs[index]['user_name']),
+                                                const SizedBox(width: 12,),
+                                                WidgetUtil.middleText(_talkLogs[index]['office_name']),
+                                              ],
+                                            ),
+                                            Row(
+                                              children: [
+                                                WidgetUtil.middleText(_talkLogs[index]['staff_name']),
+                                              ],
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                    )
-                                  ],
+                                      Container(
+                                        width: 30,
+                                        child: address == null ? Container() : GestureDetector(
+                                          onTap: () {
+                                            _selectAddressConfirm(address);
+                                          },
+                                          child: Image.asset(
+                                            'assets/images/bottom_navi/phone3.png',
+                                            width: 40,
+                                            height: 40,
+                                          ),
+                                        ),
+                                      )
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              Divider(
-                                height: 2,
-                              ), // 区切り線を追加
-                            ],
-                          );
-                        }
-                        if (_hasMoreTalkLogs) {
-                          // 追加の商品を取得中
-                          // _fetchProducts();
-                          return Center(child: CircularProgressIndicator());
-                        }
-                        return SizedBox();
-                      },
-                    );
-                  }
+                                Divider(
+                                  height: 2,
+                                ), // 区切り線を追加
+                              ],
+                            );
+                          }
+                          if (_hasMoreTalkLogs) {
+                            // 追加の商品を取得中
+                            // _fetchProducts();
+                            return Center(child: CircularProgressIndicator());
+                          }
+                          return SizedBox();
+                        },
+                      );
+                    }
 
-                  if (_showCallHistory) {
-                    return ListView.builder(
-                      itemCount: _callLogs.length,
-                      // + (_hasMoreTalkLogs ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index < _callLogs.length) {
-                          final udid = _callLogs[index]['id'];
-                          var address = context.read<AddressStore>().find(udid);
-                          return Column(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              WidgetUtil.middleText(_callLogs[index]['start']),
-                                              const SizedBox(width: 12,),
-                                              WidgetUtil.middleText(''),
-                                            ],
-                                          ),
-                                          Row(
-                                            children: [
-                                              WidgetUtil.middleText(address == null ? _callLogs[index]['name'] : address.name),
-                                              const SizedBox(width: 12,),
-                                              WidgetUtil.middleText(address == null ? '' : address.userName),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Container(
-                                      width: 30,
-                                      child: address == null ? Container() : GestureDetector(
-                                        onTap: () {
-                                          _selectAddressConfirm(address);
-                                        },
-                                        child: Image.asset(
-                                          'assets/images/bottom_navi/phone3.png',
-                                          width: 40,
-                                          height: 40,
+                    if (_showCallHistory) {
+                      return ListView.builder(
+                        itemCount: _callLogs.length,
+                        // + (_hasMoreTalkLogs ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (index < _callLogs.length) {
+                            final udid = _callLogs[index]['id'];
+                            var address = context.read<AddressStore>().find(udid);
+                            return Column(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                WidgetUtil.middleText(_callLogs[index]['start']),
+                                                const SizedBox(width: 12,),
+                                                WidgetUtil.middleText(''),
+                                              ],
+                                            ),
+                                            Row(
+                                              children: [
+                                                WidgetUtil.middleText(address == null ? _callLogs[index]['name'] : address.name),
+                                                const SizedBox(width: 12,),
+                                                WidgetUtil.middleText(address == null ? '' : address.userName),
+                                              ],
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                    )
-                                  ],
+                                      Container(
+                                        width: 30,
+                                        child: address == null ? Container() : GestureDetector(
+                                          onTap: () {
+                                            _selectAddressConfirm(address);
+                                          },
+                                          child: Image.asset(
+                                            'assets/images/bottom_navi/phone3.png',
+                                            width: 40,
+                                            height: 40,
+                                          ),
+                                        ),
+                                      )
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              Divider(
-                                height: 2,
-                              ), // 区切り線を追加
-                            ],
-                          );
-                        }
-                        return SizedBox();
-                      },
-                    );
-                  }
+                                Divider(
+                                  height: 2,
+                                ), // 区切り線を追加
+                              ],
+                            );
+                          }
+                          return SizedBox();
+                        },
+                      );
+                    }
 
-                  return GridView.extent(
-                    maxCrossAxisExtent: colWidth,
-                    padding: const EdgeInsets.only(left: gridPadding, right: gridPadding, bottom: iconSize,),
-                    mainAxisSpacing: gridSpacing,
-                    crossAxisSpacing: gridSpacing,
-                    childAspectRatio: gridRatio,
-                    children: isManagerList
-                        ? addressStore
-                            .managerList()
-                            .map((data) => _managerAddressCell(data))
-                            .toList()
-                        : addressStore
-                            .staffList()
-                            .map((data) => _addressCell(data))
-                            .toList(),
-                  );
-                },
+                    return GridView.extent(
+                      maxCrossAxisExtent: colWidth,
+                      padding: const EdgeInsets.only(left: gridPadding, right: gridPadding, bottom: iconSize,),
+                      mainAxisSpacing: gridSpacing,
+                      crossAxisSpacing: gridSpacing,
+                      childAspectRatio: gridRatio,
+                      children: isManagerList
+                          ? addressStore
+                              .managerList()
+                              .map((data) => _managerAddressCell(data))
+                              .toList()
+                          : addressStore
+                              .staffList()
+                              .map((data) => _addressCell(data))
+                              .toList(),
+                    );
+                  },
+                ),
               ),
               Positioned(
                 top: constraints.maxHeight - iconSize,
