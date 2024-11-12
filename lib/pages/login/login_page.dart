@@ -199,8 +199,6 @@ class _LoginPageState extends State<LoginPage> {
         url,
         data: FormData.fromMap({'delegatorCode': code, 'userID': id, 'password': password, 'code': code, 'user_id': id})
     ).then((response) {
-      print(response.data);
-
       if (response.data['cnt'] == '1') {
         return response.data;
       }
@@ -219,6 +217,9 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
+    print(data);
+    print(DateTime.now());
+
     var prefs = await SharedPreferences.getInstance();
     await prefs.setBool('login', true);
     await prefs.setBool('manager', true);
@@ -228,6 +229,7 @@ class _LoginPageState extends State<LoginPage> {
     await prefs.setString('authreceives', json.encode(data['authReceives']));
     await prefs.setString('codes', json.encode(data['codes']));
 
+    print(DateTime.now());
     Map<String, dynamic> settings = data['settings'];
 
     var mcsType = settings['MCSTYPE'];
@@ -235,15 +237,13 @@ class _LoginPageState extends State<LoginPage> {
       settings['DISPTYPE'] = '1';
     }
 
+    print(DateTime.now());
     await prefs.setString('settings', json.encode(settings));
     AppManager.saveAppSetting("ANMINMODEFLG", "1");
 
-    setState(() {
-      _loading = false;
-    });
-
     if (!mounted) return;
 
+    print(DateTime.now());
     context.go(AppRoute.homePage);
 
     return;
