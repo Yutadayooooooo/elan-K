@@ -1176,6 +1176,9 @@ class _HomePageState extends State<HomePage>
       setState(() {
         _ready = true;
       });
+      if (!socketservice.isConnect()) {
+        return;
+      }
       socketservice.io.emit("clients_status", [AppManager.settings['addressGroup']]);
       return;
     }

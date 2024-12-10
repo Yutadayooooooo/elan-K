@@ -112,7 +112,18 @@ with WidgetsBindingObserver, SocketIOServiceDelegate,
       print('talk resumed');
     } else if (state == AppLifecycleState.paused) {
       print('talk paused');
-      context.pop();
+      if (_talking) {
+        AppManager.talkId1 = '';
+        AppManager.talkId2 = '';
+
+        var newStatus = AppStatus.None;
+        if (AppManager.holdId.isNotEmpty) {
+          newStatus = AppStatus.Hold;
+        }
+        _setAppStatus(newStatus);
+        peer.close();
+      }
+      _close();
     }
   }
 
