@@ -96,7 +96,14 @@ class RoomTalkPageState extends State<RoomTalkPage>
       if (AppManager.selectUser!.call == 1) {
         print('[DEBUG PRINT]着信中 ${AppManager.selectUser!.id}');
         _statusImage = ImageName.roomCall;
-        Future.delayed(Duration(seconds: 10), () {
+        // 自動応答までの時間
+        // elan: 0
+        // 既定: 10
+        var duration = 10;
+        if (AppDefine.elanApp) {
+          duration = 0;
+        }
+        Future.delayed(Duration(seconds: duration), () {
           _response();
         });
 
@@ -248,13 +255,23 @@ class RoomTalkPageState extends State<RoomTalkPage>
 
   void _startTalk() {
     _stopRusuTimer();
-    AppManager.isVideoMute = true;
     // AppManager.talkId1 = AppManager.selectUser.id;
     AppManager.selectUser!.call = 0;
     _statusImage = '';
     _callendIsEnabled = true;
     setAppStatus(AppStatus.Talk);
     audio.stopCall();
+    if (AppManager.appsettings['VIDEO_TALK'] == '1') {
+      // 音声のみ
+      AppManager.isVideoMute = true;
+    } else {
+      AppManager.isVideoMute = false;
+      var sendData = {
+        "id2": "toggle_video",
+        "val": '1'
+      };
+      socketservice.io.emit("talk", [sendData]);
+    }
   }
 
   void _cancelCall({bool isClose = true}) {
