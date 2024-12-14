@@ -45,6 +45,7 @@ class AppDefine {
 
 class ImageName {
   static const connecting = 'assets/images/talk/connecting.png';
+  static const roomCall = 'assets/images/room/call.gif';
   static const rusu = 'assets/images/talk/rusu.png';
   static const addrCall = 'assets/images/status/addr_call.png';
 }

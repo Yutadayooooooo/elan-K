@@ -3,7 +3,9 @@ import 'dart:math';
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:ami/helpers/widget_helper.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import 'package:marquee/marquee.dart';
 import 'package:video_player/video_player.dart';
@@ -39,6 +41,7 @@ class _RoomPageState extends State<RoomPage>
   String _version = '1.0';
   Timer? _sleeptimer;
   Timer? _toSettingTimer;
+  Timer? _allTalkingTimer;
   SocketIOService socketservice = SocketIOService();
   AudioService audio = AudioService();
   bool _isconnect = false;
@@ -53,6 +56,7 @@ class _RoomPageState extends State<RoomPage>
   bool _isVideoPlay = false;
 
   var _safetyCheckIds = [];
+  String _infoMessage = '';
   var _imageFiles = [];
   var _imageFileIndex = -1;
   double _imageOpacity = 0.0;
@@ -109,8 +113,6 @@ class _RoomPageState extends State<RoomPage>
     }
 
     SystemChrome.setPreferredOrientations([
-      // 縦向きと横向きを許可する方向として登録する
-      DeviceOrientation.portraitUp,
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
@@ -205,15 +207,25 @@ class _RoomPageState extends State<RoomPage>
   }
 
   Future<void> _toSetting() async {
+    _stopTimers();
     _disconnect();
     context.read<AddressStore>().clear();
     _active = false;
+    await context.push(AppRoute.settingPage);
+    print('from setting to room');
+    socketservice.reconnect = true;
+    socketservice.delegate = this;
+    socketservice.startConnectTimer();
+  }
+
+  void _stopTimers() {
     if (_sleeptimer != null) {
       _sleeptimer!.cancel();
     }
-    await context.push(AppRoute.settingPage);
-    print('from setting to room');
-    socketservice.startConnectTimer();
+    if (_allTalkingTimer != null) {
+      _allTalkingTimer!.cancel();
+      _allTalkingTimer = null;
+    }
   }
 
   Future<void> _tap() async {
@@ -234,7 +246,19 @@ class _RoomPageState extends State<RoomPage>
       _sleeptimer!.cancel();
     }
 
-    await context.push(AppRoute.talkPage);
+    await context.push(AppRoute.roomTalkPage);
+
+    if (AppManager.allTalking) {
+      setState(() {
+
+      });
+      _allTalkingTimer = Timer.periodic(const Duration(minutes: 5), (Timer timer) {
+        setState(() {
+          AppManager.allTalking = false;
+        });
+      });
+    }
+
     print('[DEBUG PRINT] from roomtalk');
     audio.stopCall();
     audio.stopRingtone();
@@ -329,6 +353,11 @@ class _RoomPageState extends State<RoomPage>
       return;
     }
 
+    _infoMessage = data['message'].toString();
+    if (mounted) {
+      setState(() {
+      });
+    }
     // _imageFiles = data['files'];
     if (_imageFiles.length > 0) {
       _imageFileIndex = 0;
@@ -384,7 +413,7 @@ class _RoomPageState extends State<RoomPage>
       "photo": ""
     });
     _active = false;
-    await context.push(AppRoute.talkPage);
+    await context.push(AppRoute.roomTalkPage);
 
     print('[DEBUG PRINT] from roomtalk');
     _tapping = false;
@@ -480,7 +509,15 @@ class _RoomPageState extends State<RoomPage>
     if (size.width > size.height) {
       callImageSize = min(size.height * 0.7, 500.0);
     }
-    print(MediaQuery.of(context).padding.left);
+    const messageHeight = 58.0;
+    const messageFontSize = 48.0;
+    var message = _infoMessage;
+    if (_infoMessage.length * messageFontSize < size.width) {
+      var addChars = ((size.width - (_infoMessage.length * messageFontSize)) / messageFontSize).floor();
+      for (var i = 0; i < addChars; i++) {
+        message += '　';
+      }
+    }
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -530,7 +567,7 @@ class _RoomPageState extends State<RoomPage>
                   child: Image.network(
                     '${AppDefine.baseURL}image?path=${_imageFiles[_imageFileIndex]}',
                     width: size.width,
-                    height: size.height - 30,
+                    height: size.height - messageHeight,
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -565,48 +602,6 @@ class _RoomPageState extends State<RoomPage>
                         ),
                       ],
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(right: 10.0, top: 8.0),
-                          child: Text(
-                            'Ver. $_version',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ),
-                        GestureDetector(
-                            child: Image.asset(
-                              'assets/images/spana2.png',
-                              width: spanaSize.width,
-                              height: spanaSize.height,
-                            ),
-                            // onPanCancel: () => _toSettingTimer?.cancel(),
-                            // onPanDown: (_) => {
-                            //   _toSettingTimer = Timer(Duration(seconds: 3), () {
-                            //     print('pandown');
-                            //     _toSetting();
-                            //   })
-                            // },
-                            onLongPressStart: (_) {
-                              print('on long press start');
-                              _toSettingTimer = Timer(Duration(seconds: 2), () {
-                                _toSetting();
-                              });
-                            },
-                            onLongPressEnd: (_) {
-                              print('on long press end');
-                              _toSettingTimer?.cancel();
-                            }
-                          // onLongPress: () {
-                          //   _toSetting();
-                          // },
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               ),
@@ -615,59 +610,75 @@ class _RoomPageState extends State<RoomPage>
               top: iconSize,
               left: 8,
               right: max(MediaQuery.of(context).padding.right, 8),
-              height: iconSize,
               // right: constraints.maxWidth,
               child: Container(
                 color: Colors.transparent,
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(),
-                      ],
-                    ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        SizedBox(
-                          width: 120,
-                          height: 40,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              backgroundColor:
-                                  Color.fromARGB(255, 115, 176, 236),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                        Column(
+                          children: [
+                            SizedBox(
+                              width: 120,
+                              height: 40,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  backgroundColor:
+                                      Color.fromARGB(255, 115, 176, 236),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                onPressed: () async {
+                                  // _startMovie();
+                                  _tap();
+                                },
+                                child: const Text("一斉呼出"),
                               ),
                             ),
-                            onPressed: () async {
-                              // _startMovie();
-                              _tap();
-                            },
-                            child: const Text("一斉呼出"),
-                          ),
+                            const SizedBox(height: 8,),
+                            SizedBox(
+                              width: 120,
+                              height: 40,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  backgroundColor:
+                                  Color.fromARGB(255, 115, 176, 236),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                onPressed: () async {
+                                  _toSetting();
+                                },
+                                child: const Text("設定"),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
-            ),
+            ), // メニューボタン
             Positioned(
               bottom: 0,
-              height: 30,
+              height: messageHeight,
               width: size.width,
               child: Marquee(
-                  text: '寒くなりました　　　　　　　',
-                  style: TextStyle(
-                    color: const Color.fromARGB(255, 129, 146, 92),
-                    fontSize: 24,
+                  text: message.isEmpty ? '　' : message,
+                  style: const TextStyle(
+                    color: Color.fromARGB(255, 129, 146, 92),
+                    fontSize: messageFontSize,
                     fontWeight: FontWeight.bold,
                   )),
-            ),
+            ), // メッセージ
             if (_controller != null && _controller!.value.isInitialized)
               Container(
                 color: Colors.black,
@@ -676,6 +687,21 @@ class _RoomPageState extends State<RoomPage>
                     aspectRatio: _controller!.value.aspectRatio,
                     child: VideoPlayer(_controller!),
                   ),
+                ),
+              ),
+            if (AppManager.allTalking)
+              Container(
+                color: Color.fromARGB(255, 208, 241, 255),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    WidgetUtil.middleText('訪問中のため', fontSize: 48),
+                    WidgetUtil.middleText('しばらくお待ちください', fontSize: 48),
+                    Image.asset(
+                      height: size.width / 4,
+                      'assets/images/room/timeout.gif',
+                    ),
+                  ],
                 ),
               ),
           ],

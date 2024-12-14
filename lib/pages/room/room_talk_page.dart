@@ -40,13 +40,16 @@ class RoomTalkPageState extends State<RoomTalkPage>
   AudioService audio = AudioService();
   bool _talking = false;
   Timer? _rusuTimer;
-  Timer? _timeoutTimer;
   String _statusImage = '';
   bool _isrecording = false;
 
   bool _talked = false;
   bool _showSubmenu = false;
   bool _callendIsEnabled = true;
+
+  /// 通話相手情報
+  String _talkingUserName = '';
+  String _talkingName = '';
 
   /// 通話中着信対応
   String _callingId = '';
@@ -76,6 +79,7 @@ class RoomTalkPageState extends State<RoomTalkPage>
     peer.onAddRemoteStream = _onAddRemoteStream;
     peer.onIceCandidate = _onIceCandidate;
     _controller.delegate = this;
+    AppManager.allTalking = false;
     _initRenderers();
   }
 
@@ -91,12 +95,15 @@ class RoomTalkPageState extends State<RoomTalkPage>
 
       if (AppManager.selectUser!.call == 1) {
         print('[DEBUG PRINT]着信中 ${AppManager.selectUser!.id}');
-        _statusImage = ImageName.addrCall;
+        _statusImage = ImageName.roomCall;
         Future.delayed(Duration(seconds: 10), () {
           _response();
         });
 
-        if (AppManager.settings['MUTE'] == '0') {
+        print('=============================================================================');
+        print('ミュート ${AppManager.appsettings['MUTE']}');
+        if (AppManager.appsettings['MUTE'] == '0') {
+          print('着信音再生');
           audio.ringtone();
         }
       } else if (AppManager.status == AppStatus.Call) {
@@ -212,7 +219,7 @@ class RoomTalkPageState extends State<RoomTalkPage>
   /// call talk
   /// *******************************************************************************************
   Future<void> _call() async {
-    _statusImage = ImageName.connecting;
+    _statusImage = ImageName.roomCall;
     setAppStatus(AppStatus.Call);
     await audio.call();
     socketservice.io.emit("call", [AppManager.selectUser!.id]);
@@ -223,13 +230,6 @@ class RoomTalkPageState extends State<RoomTalkPage>
         return;
       }
       _timeoutCall();
-      setState(() {
-        _statusImage = ImageName.rusu;
-      });
-
-      _rusuTimer = Timer.periodic(Duration(milliseconds: AppDefine.absenceSec2), (Timer timer) {
-        _close();
-      });
     });
   }
 
@@ -248,6 +248,7 @@ class RoomTalkPageState extends State<RoomTalkPage>
 
   void _startTalk() {
     _stopRusuTimer();
+    AppManager.isVideoMute = true;
     // AppManager.talkId1 = AppManager.selectUser.id;
     AppManager.selectUser!.call = 0;
     _statusImage = '';
@@ -258,6 +259,7 @@ class RoomTalkPageState extends State<RoomTalkPage>
 
   void _cancelCall({bool isClose = true}) {
     if (socketservice.isConnect()) {
+      socketservice.io.emit("call_cancel_push", {'callID': AppManager.selectUser!.id, 'to': ''});
       socketservice.io.emit("call_cancel", [AppManager.selectUser!.id]);
     }
     audio.stopCall();
@@ -867,6 +869,30 @@ class RoomTalkPageState extends State<RoomTalkPage>
             fit: StackFit.expand,
             children: <Widget>[
               const Material(color: Colors.white),
+              if (AppManager.status == AppStatus.Call)
+                Positioned(
+                  top: 0,
+                  height: 48,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    alignment: Alignment.center,
+                    color: Colors.blue,
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: WidgetUtil.middleText('呼び出し中です。', fontSize: 30, color: Colors.white,),),
+                ),
+              if (AppManager.selectUser!.call == 1 && _statusImage.isNotEmpty)
+                Positioned(
+                  top: 0,
+                  height: 48,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    alignment: Alignment.center,
+                    color: Colors.blue,
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: WidgetUtil.middleText('オペレーターから呼び出し', fontSize: 30, color: Colors.white,),),
+                ),
               if (_hasRemote2Video)
                 Positioned(
                   top: constraints.maxHeight / 2,
@@ -901,67 +927,59 @@ class RoomTalkPageState extends State<RoomTalkPage>
                     objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                   ),
                 ),
-              if (!_talking)
-                InkWell(
-                  onTap: () {
-                    _tap();
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage(AppManager.roomImageName(size)),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                ),
-              if (_talking)
-                Positioned(
-                  top: 40,
-                  left: 0,
-                  width: constraints.maxWidth,
-                  height: 60,
-                  // right: constraints.maxWidth,
-                  child: Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            _changeCamera();
-                          },
-                          child: SizedBox(
-                            width: smallButtonSize,
-                            height: smallButtonSize,
-                            child: Image.asset("assets/images/talk/btn-change_my_camera.png"),
-                          ),
-                        ),
-                      ],
-                    ),
+              if (_talking && AppManager.isVideoMute && _talkingName.isNotEmpty)
+                Container(
+                  color: Colors.white,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      WidgetUtil.middleText(_talkingUserName, fontSize: 40,),
+                      WidgetUtil.middleText('$_talkingNameと通話中', fontSize: 40,),
+                    ],
                   ),
                 ),
               if (_callendIsEnabled)
                 Positioned(
-                  bottom: (_showSubmenu ? button1FrameHeight : 0.0) + 16.0,
-                  left: 0,
-                  width: constraints.maxWidth,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      GestureDetector(
-                        child: Image.asset(
-                          'assets/images/talk/btn-callend.png',
-                          width: button1Width,
-                          height: button1Height,
+                  top: 40,
+                  left: 8,
+                  right: max(MediaQuery.of(context).padding.right, 8),
+                  // right: constraints.maxWidth,
+                  child: Container(
+                    color: Colors.transparent,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Column(
+                              children: [
+                                SizedBox(
+                                  width: 120,
+                                  height: 40,
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      foregroundColor: Colors.white,
+                                      backgroundColor:
+                                      const Color.fromARGB(255, 115, 176, 236),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    onPressed: () async {
+                                      _callEndButton();
+                                    },
+                                    child: const Text("通話終了"),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                        onTap: () {
-                          _callEndButton();
-                        },
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+                ), // メニューボタン
               if (_statusImage.isNotEmpty)
                 Positioned(
                   top: size.height / 2 - (statusImageSize / 2),
@@ -1083,10 +1101,10 @@ class RoomTalkPageState extends State<RoomTalkPage>
       _notConnect(data["info"]);
     }
     else if (message == 'call_reject') {
-      if (data["udid"] == null) {
-        return;
-      }
-      _callRejected();
+      // if (data["udid"] == null) {
+      //   return;
+      // }
+      // _callRejected();
     }
     else if (message == 'call_not_auth') {
       if (data["udid"] == null) {
@@ -1225,6 +1243,9 @@ class RoomTalkPageState extends State<RoomTalkPage>
 
   @override
   void onCallResponse(to, sdp) {
+    if (AppManager.selectUser!.id.toString().startsWith('@')) {
+      socketservice.io.emit("call_cancel_push", {'callID': AppManager.selectUser!.id, 'to': to});
+    }
     AppManager.talkId1 = to;
     peer.receiveOffer(to, sdp);
   }
@@ -1335,6 +1356,23 @@ class RoomTalkPageState extends State<RoomTalkPage>
         return;
       }
       _threewayToCall(data['from'], data['to']);
+    }
+    else if (id2 == 'talk_info') {
+      setState(() {
+        _talkingUserName = data['user_name'];
+        _talkingName = data['name'];
+      });
+    }
+    else if (id2 == 'toggle_video') {
+      if (data['val'].toString() == '1') {
+        AppManager.isVideoMute = false;
+      } else {
+        AppManager.isVideoMute = true;
+      }
+      setState(() {
+
+      });
+      peer.setVideoEnabled(!AppManager.isVideoMute);
     }
   }
 

@@ -129,6 +129,7 @@ flutter:
     - assets/images/talk/
     - assets/images/sensor/
     - assets/images/tutorial/
+    - assets/images/room/
     - assets/sounds/
     - assets/videos/
     - assets/test.png
