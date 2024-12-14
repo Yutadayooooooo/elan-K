@@ -390,8 +390,8 @@ class _RoomPageState extends State<RoomPage>
 
     final currentVideo = _infoVideo;
     _infoVideo = data['video'];
-    // _imageFiles = data['files'];
-    if (_imageFiles.length > 0) {
+    _imageFiles = data['files'];
+    if (_imageFiles.isNotEmpty) {
       _infoVideo = '';
       _imageFileIndex = 0;
       _startImageAnimation();
@@ -539,8 +539,8 @@ class _RoomPageState extends State<RoomPage>
     final startHour = int.parse(startParts[0]);
     final startMinute = int.parse(startParts[1]);
     List<String> endParts = AppManager.appsettings['SLEEP_END'].split(':');
-    final endHour = int.parse(startParts[0]);
-    final endMinute = int.parse(startParts[1]);
+    final endHour = int.parse(endParts[0]);
+    final endMinute = int.parse(endParts[1]);
 
     final start = TimeOfDay(hour: startHour, minute: startMinute);
     final end = TimeOfDay(hour: endHour, minute: endMinute);

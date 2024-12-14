@@ -56,7 +56,7 @@ class _ClockWidgetState extends State<ClockWidget> {
 
   @override
   Widget build(BuildContext context) {
-    var timeHeight = 180.0;
+    var timeHeight = 240.0;
     var dateHeight = 100.0;
     var dateLeft = 100.0;
     var dateTimeMargin = 40.0;
@@ -65,7 +65,7 @@ class _ClockWidgetState extends State<ClockWidget> {
     var fontSize1 = 80.0;
     var fontSize2 = 200.0;
     // print(fontSize);
-    if (shortestSide < 600) {
+    if (shortestSide < 500) {
       timeHeight = 150;
       dateHeight = 60.0;
       dateLeft = 60.0;
