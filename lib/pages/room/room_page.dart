@@ -43,6 +43,7 @@ class _RoomPageState extends State<RoomPage>
   Timer? _toSettingTimer;
   Timer? _allTalkingTimer;
   Timer? _getInfoTimer;
+  Timer? _slideShowTimer;
   SocketIOService socketservice = SocketIOService();
   AudioService audio = AudioService();
   bool _isconnect = false;
@@ -82,6 +83,7 @@ class _RoomPageState extends State<RoomPage>
 
     Future(() {
       _brightnessSetting();
+      _getInfo();
     });
   }
 
@@ -120,6 +122,7 @@ class _RoomPageState extends State<RoomPage>
     ]);
 
     _startGetInfoTimer();
+    _startImageAnimation();
   }
 
   @override
@@ -133,10 +136,10 @@ class _RoomPageState extends State<RoomPage>
       socketservice.reconnect = true;
       socketservice.startConnectTimer();
       _startGetInfoTimer();
+      _startImageAnimation();
     } else if (state == AppLifecycleState.paused) {
       // sensorService.stopWatch();
       _active = false;
-      _stopGetInfoTimer();
       _stopTimers();
       if (_sleeptimer != null) {
         _sleeptimer!.cancel();
@@ -191,7 +194,6 @@ class _RoomPageState extends State<RoomPage>
   void _startGetInfoTimer() {
     _stopGetInfoTimer();
 
-    _getInfo();
     _getInfoTimer = Timer.periodic(const Duration(seconds: 30), (Timer timer) {
       _getInfo();
     });
@@ -240,6 +242,7 @@ class _RoomPageState extends State<RoomPage>
     socketservice.delegate = this;
     socketservice.startConnectTimer();
     _startGetInfoTimer();
+    _startImageAnimation();
   }
 
   void _stopTimers() {
@@ -250,8 +253,9 @@ class _RoomPageState extends State<RoomPage>
       _allTalkingTimer!.cancel();
       _allTalkingTimer = null;
     }
-    _controller?.pause();
+    _stopMovie();
     _stopGetInfoTimer();
+    _stopImageAnimation();
   }
 
   Future<void> _tap() async {
@@ -272,6 +276,7 @@ class _RoomPageState extends State<RoomPage>
       _sleeptimer!.cancel();
     }
     _stopGetInfoTimer();
+    _stopImageAnimation();
     _controller?.pause();
 
     await context.push(AppRoute.roomTalkPage);
@@ -288,6 +293,7 @@ class _RoomPageState extends State<RoomPage>
     }
 
     _startGetInfoTimer();
+    _startImageAnimation();
     print('[DEBUG PRINT] from roomtalk');
     audio.stopCall();
     audio.stopRingtone();
@@ -383,43 +389,59 @@ class _RoomPageState extends State<RoomPage>
     }
 
     _infoMessage = data['message'].toString();
-    if (mounted) {
-      setState(() {
-      });
-    }
 
     final currentVideo = _infoVideo;
     _infoVideo = data['video'];
     _imageFiles = data['files'];
     if (_imageFiles.isNotEmpty) {
-      _infoVideo = '';
+      _stopMovie();
       _imageFileIndex = 0;
-      _startImageAnimation();
     }
 
     if (_infoVideo.isNotEmpty && currentVideo != _infoVideo) {
       _startMovie();
     }
+
+    if (mounted) {
+      setState(() {
+      });
+    }
   }
 
   void _startImageAnimation() {
-    if (mounted) {
-      setState(() {
-        _imageOpacity = 0.0;
-      });
-      Future.delayed(Duration(milliseconds: 1000), () {
+    _stopImageAnimation();
+    _slideShowTimer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
+      _slideShow();
+    });
+  }
+
+  void _stopImageAnimation() {
+    if (_slideShowTimer != null) {
+      _slideShowTimer?.cancel();
+      _slideShowTimer = null;
+    }
+  }
+
+  void _slideShow() {
+    if (mounted && _imageFiles.isNotEmpty) {
+      if (_imageFiles.length == 1) {
         setState(() {
-          _imageFileIndex = (_imageFileIndex + 1) < _imageFiles.length
-              ? _imageFileIndex + 1
-              : 0;
           _imageOpacity = 1.0;
         });
-      });
+      } else {
+        setState(() {
+          _imageOpacity = 0.0;
+        });
+        Future.delayed(Duration(milliseconds: 1000), () {
+          setState(() {
+            _imageFileIndex = (_imageFileIndex + 1) < _imageFiles.length
+                ? _imageFileIndex + 1
+                : 0;
+            _imageOpacity = 1.0;
+          });
+        });
+      }
     }
-
-    Future.delayed(Duration(seconds: 10), () {
-      _startImageAnimation();
-    });
   }
 
   void _startMovie() {
@@ -434,6 +456,16 @@ class _RoomPageState extends State<RoomPage>
         _controller!.play();
         _controller!.setLooping(true); // ループ再生を有効化
       });
+  }
+
+  void _stopMovie() {
+    _infoVideo = '';
+    if (mounted) {
+      setState(() {
+
+      });
+    }
+    _controller?.dispose();
   }
 
   Future<void> _receive(String udid) async {
@@ -658,7 +690,7 @@ class _RoomPageState extends State<RoomPage>
                 ),
               ),
             ],
-            if (!sleepMode && _controller != null && _controller!.value.isInitialized)
+            if (!sleepMode && _infoVideo.isNotEmpty && _controller != null && _controller!.value.isInitialized)
               Container(
                 color: Colors.black,
                 child: Center(
