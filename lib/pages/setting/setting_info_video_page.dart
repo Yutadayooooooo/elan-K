@@ -17,6 +17,7 @@ class SettingInfoVideoPageState extends State<SettingInfoVideoPage> {
   var _init = true;
   List<dynamic> _data = [];
   var _selectId = '';
+  var _loop = '0';
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -68,6 +69,7 @@ class SettingInfoVideoPageState extends State<SettingInfoVideoPage> {
     setState(() {
       _data = data['list'];
       _selectId = data['selectId'].toString();
+      _loop = data['loop'].toString();
     });
   }
 
@@ -220,6 +222,38 @@ class SettingInfoVideoPageState extends State<SettingInfoVideoPage> {
     }
   }
 
+  Future<void> _postLoop() async {
+    setState(() {
+      _loading = true;
+    });
+    final code = AppManager.isManager ? AppManager.selectCode : AppManager.delegatorCode;
+    var url = "${AppDefine.baseURL}app/info_video_loop?loop=$_loop&code=$code&token=${AppManager.settings['api_token']}";
+
+    final dio = Dio();
+    var data = await dio.get(
+      url,
+    ).then((response) {
+      return response.data;
+    }).catchError((err) {
+      print(err);
+      return null;
+    });
+
+    print(data);
+
+    if (data != null) {
+      if (data['status'].toString() == 'ok') {
+        _loop = data['loop'];
+      }
+    }
+
+    setState(() {
+      _loading = false;
+    });
+
+    // _getData();
+  }
+
   Widget _listContainer(int index) {
     final item = _data[index];
     final itemId = item['id'].toString();
@@ -295,6 +329,43 @@ class SettingInfoVideoPageState extends State<SettingInfoVideoPage> {
     );
   }
 
+  Widget _loopContainer() {
+    TextStyle _titleTextStyle1 = const TextStyle(
+      fontSize: 14,
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            bottom: BorderSide(color: Color.fromARGB(255, 220, 220, 220)),
+          ),
+        ),
+        height: WidgetUtil.listHeight,
+        padding: const EdgeInsets.all(10.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '繰り返し再生',
+              style: _titleTextStyle1,
+            ),
+            CupertinoSwitch(
+              value: _loop == '1',
+              onChanged: (value) {
+                print(value);
+                _loop = value ? '1' : '0';
+                _postLoop();
+              },
+              activeColor: Colors.blue,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
@@ -320,9 +391,12 @@ class SettingInfoVideoPageState extends State<SettingInfoVideoPage> {
           children: [
             ListView.builder(
               itemBuilder: (BuildContext context, int index) {
-                return _listContainer(index);
+                if (index == 0) {
+                  return _loopContainer();
+                }
+                return _listContainer(index - 1);
               },
-              itemCount: _data.length,
+              itemCount: _data.length + 1,
             ),
             if (_loading)
               WidgetUtil.loadingIndicator,
