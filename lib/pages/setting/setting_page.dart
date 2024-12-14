@@ -420,7 +420,7 @@ class _SettingPageState extends State<SettingPage> {
       listContainers.addAll([
         _separator,
         nextListContainer('通話権限', '', _toNotifyGroupPage),
-        nextListContainer('アカウント一覧', '', _toAccountListPage),
+        // nextListContainer('アカウント一覧', '', _toAccountListPage),
       ]);
     }
 
@@ -429,8 +429,8 @@ class _SettingPageState extends State<SettingPage> {
       if (mode == 'user' || mode == 'staff2') {
         listContainers.addAll([
           _separator,
-          nextListContainer('お知らせ動画', '', _toInfoVideoPage),
-          nextListContainer('スライドショー', '', _toInfoPhotoPage),
+          // nextListContainer('お知らせ動画', '', _toInfoVideoPage),
+          // nextListContainer('スライドショー', '', _toInfoPhotoPage),
           nextListContainer('メッセージ配信', '', () async {
             await context.push(AppRoute.settingInfoMessagePage);
           }),
