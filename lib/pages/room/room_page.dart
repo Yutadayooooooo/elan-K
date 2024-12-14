@@ -42,6 +42,7 @@ class _RoomPageState extends State<RoomPage>
   Timer? _sleeptimer;
   Timer? _toSettingTimer;
   Timer? _allTalkingTimer;
+  Timer? _getInfoTimer;
   SocketIOService socketservice = SocketIOService();
   AudioService audio = AudioService();
   bool _isconnect = false;
@@ -57,6 +58,7 @@ class _RoomPageState extends State<RoomPage>
 
   var _safetyCheckIds = [];
   String _infoMessage = '';
+  String _infoVideo = '';
   var _imageFiles = [];
   var _imageFileIndex = -1;
   double _imageOpacity = 0.0;
@@ -117,7 +119,7 @@ class _RoomPageState extends State<RoomPage>
       DeviceOrientation.landscapeRight,
     ]);
 
-    _getInfo();
+    _startGetInfoTimer();
   }
 
   @override
@@ -130,9 +132,12 @@ class _RoomPageState extends State<RoomPage>
       print('resumed');
       socketservice.reconnect = true;
       socketservice.startConnectTimer();
+      _startGetInfoTimer();
     } else if (state == AppLifecycleState.paused) {
       // sensorService.stopWatch();
       _active = false;
+      _stopGetInfoTimer();
+      _stopTimers();
       if (_sleeptimer != null) {
         _sleeptimer!.cancel();
       }
@@ -172,6 +177,24 @@ class _RoomPageState extends State<RoomPage>
     peer.onAnswer = null;
     peer.onAddRemoteStream = null;
     peer.onIceCandidate = null;
+  }
+
+  void _stopGetInfoTimer() {
+    if (_getInfoTimer != null) {
+      _getInfoTimer!.cancel();
+      _getInfoTimer = null;
+    }
+    _imageFileIndex = -1;
+    _imageFiles = [];
+  }
+
+  void _startGetInfoTimer() {
+    _stopGetInfoTimer();
+
+    _getInfo();
+    _getInfoTimer = Timer.periodic(const Duration(seconds: 30), (Timer timer) {
+      _getInfo();
+    });
   }
 
   Future<void> _logout() async {
@@ -216,6 +239,7 @@ class _RoomPageState extends State<RoomPage>
     socketservice.reconnect = true;
     socketservice.delegate = this;
     socketservice.startConnectTimer();
+    _startGetInfoTimer();
   }
 
   void _stopTimers() {
@@ -226,6 +250,8 @@ class _RoomPageState extends State<RoomPage>
       _allTalkingTimer!.cancel();
       _allTalkingTimer = null;
     }
+    _controller?.pause();
+    _stopGetInfoTimer();
   }
 
   Future<void> _tap() async {
@@ -245,6 +271,8 @@ class _RoomPageState extends State<RoomPage>
     if (_sleeptimer != null) {
       _sleeptimer!.cancel();
     }
+    _stopGetInfoTimer();
+    _controller?.pause();
 
     await context.push(AppRoute.roomTalkPage);
 
@@ -259,6 +287,7 @@ class _RoomPageState extends State<RoomPage>
       });
     }
 
+    _startGetInfoTimer();
     print('[DEBUG PRINT] from roomtalk');
     audio.stopCall();
     audio.stopRingtone();
@@ -358,10 +387,18 @@ class _RoomPageState extends State<RoomPage>
       setState(() {
       });
     }
+
+    final currentVideo = _infoVideo;
+    _infoVideo = data['video'];
     // _imageFiles = data['files'];
     if (_imageFiles.length > 0) {
+      _infoVideo = '';
       _imageFileIndex = 0;
       _startImageAnimation();
+    }
+
+    if (_infoVideo.isNotEmpty && currentVideo != _infoVideo) {
+      _startMovie();
     }
   }
 
@@ -386,13 +423,16 @@ class _RoomPageState extends State<RoomPage>
   }
 
   void _startMovie() {
+    _controller?.dispose();
+    final url = '${AppDefine.baseURL}image?path=${_infoVideo}';
     _controller = VideoPlayerController.networkUrl(
-      Uri.parse('http://arch.casio.jp/file/dc/CIMG1226.mov'),
+      Uri.parse(url),
     )..initialize().then((_) {
         // 動画が初期化されたら再描画
         setState(() {});
         // 動画を自動再生
         _controller!.play();
+        _controller!.setLooping(true); // ループ再生を有効化
       });
   }
 
@@ -413,8 +453,11 @@ class _RoomPageState extends State<RoomPage>
       "photo": ""
     });
     _active = false;
+    _stopGetInfoTimer();
+    _controller?.pause();
     await context.push(AppRoute.roomTalkPage);
 
+    _startGetInfoTimer();
     print('[DEBUG PRINT] from roomtalk');
     _tapping = false;
     _active = true;
@@ -491,6 +534,39 @@ class _RoomPageState extends State<RoomPage>
     _tap();
   }
 
+  bool _isSleepMode() {
+    List<String> startParts = AppManager.appsettings['SLEEP_START'].split(':');
+    final startHour = int.parse(startParts[0]);
+    final startMinute = int.parse(startParts[1]);
+    List<String> endParts = AppManager.appsettings['SLEEP_END'].split(':');
+    final endHour = int.parse(startParts[0]);
+    final endMinute = int.parse(startParts[1]);
+
+    final start = TimeOfDay(hour: startHour, minute: startMinute);
+    final end = TimeOfDay(hour: endHour, minute: endMinute);
+    final now = TimeOfDay.now();
+
+    // 判定
+    final isWithinRange = _isTimeWithinRange(now, start, end);
+
+    return isWithinRange;
+  }
+
+  /// 現在時刻が指定した範囲内にあるかを判定する関数
+  bool _isTimeWithinRange(TimeOfDay now, TimeOfDay start, TimeOfDay end) {
+    final nowMinutes = now.hour * 60 + now.minute;
+    final startMinutes = start.hour * 60 + start.minute;
+    final endMinutes = end.hour * 60 + end.minute;
+
+    // 終了時刻が開始時刻よりも小さい場合（範囲が日をまたぐ場合）
+    if (endMinutes < startMinutes) {
+      return nowMinutes >= startMinutes || nowMinutes <= endMinutes;
+    } else {
+      // 通常の範囲内判定
+      return nowMinutes >= startMinutes && nowMinutes <= endMinutes;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     const iconSize = 50.0;
@@ -518,6 +594,7 @@ class _RoomPageState extends State<RoomPage>
         message += '　';
       }
     }
+    final sleepMode = _isSleepMode();
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -554,25 +631,43 @@ class _RoomPageState extends State<RoomPage>
                 child: ClockWidget(),
               ),
             ),
-            if (_imageFileIndex >= 0) ...[
+            Positioned(
+              bottom: 0,
+              height: messageHeight,
+              width: size.width,
+              child: Marquee(
+                  text: message.isEmpty ? '　' : message,
+                  style: const TextStyle(
+                    color: Color.fromARGB(255, 129, 146, 92),
+                    fontSize: messageFontSize,
+                    fontWeight: FontWeight.bold,
+                  )),
+            ), // メッセージ
+            if (!sleepMode && _imageFileIndex >= 0) ...[
               Container(
                 color: Colors.black,
               ),
-              Positioned(
-                top: 0,
-                bottom: 30,
-                child: AnimatedOpacity(
-                  duration: Duration(seconds: 1),
-                  opacity: _imageOpacity,
-                  child: Image.network(
-                    '${AppDefine.baseURL}image?path=${_imageFiles[_imageFileIndex]}',
-                    width: size.width,
-                    height: size.height - messageHeight,
-                    fit: BoxFit.cover,
-                  ),
+              AnimatedOpacity(
+                duration: Duration(seconds: 1),
+                opacity: _imageOpacity,
+                child: Image.network(
+                  '${AppDefine.baseURL}image?path=${_imageFiles[_imageFileIndex]}',
+                  width: size.width,
+                  height: size.height - messageHeight,
+                  fit: BoxFit.cover,
                 ),
               ),
             ],
+            if (!sleepMode && _controller != null && _controller!.value.isInitialized)
+              Container(
+                color: Colors.black,
+                child: Center(
+                  child: AspectRatio(
+                    aspectRatio: _controller!.value.aspectRatio,
+                    child: VideoPlayer(_controller!),
+                  ),
+                ),
+              ),
             Positioned(
               top: 0,
               left: 8,
@@ -605,7 +700,7 @@ class _RoomPageState extends State<RoomPage>
                   ],
                 ),
               ),
-            ),
+            ), // LED
             Positioned(
               top: iconSize,
               left: 8,
@@ -628,7 +723,7 @@ class _RoomPageState extends State<RoomPage>
                                 style: ElevatedButton.styleFrom(
                                   foregroundColor: Colors.white,
                                   backgroundColor:
-                                      Color.fromARGB(255, 115, 176, 236),
+                                  Color.fromARGB(255, 115, 176, 236),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
@@ -667,28 +762,6 @@ class _RoomPageState extends State<RoomPage>
                 ),
               ),
             ), // メニューボタン
-            Positioned(
-              bottom: 0,
-              height: messageHeight,
-              width: size.width,
-              child: Marquee(
-                  text: message.isEmpty ? '　' : message,
-                  style: const TextStyle(
-                    color: Color.fromARGB(255, 129, 146, 92),
-                    fontSize: messageFontSize,
-                    fontWeight: FontWeight.bold,
-                  )),
-            ), // メッセージ
-            if (_controller != null && _controller!.value.isInitialized)
-              Container(
-                color: Colors.black,
-                child: Center(
-                  child: AspectRatio(
-                    aspectRatio: _controller!.value.aspectRatio,
-                    child: VideoPlayer(_controller!),
-                  ),
-                ),
-              ),
             if (AppManager.allTalking)
               Container(
                 color: Color.fromARGB(255, 208, 241, 255),

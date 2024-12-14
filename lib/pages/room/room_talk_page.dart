@@ -881,7 +881,7 @@ class RoomTalkPageState extends State<RoomTalkPage>
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: WidgetUtil.middleText('呼び出し中です。', fontSize: 30, color: Colors.white,),),
                 ),
-              if (AppManager.selectUser!.call == 1 && _statusImage.isNotEmpty)
+              if (AppManager.selectUser?.call == 1 && _statusImage.isNotEmpty)
                 Positioned(
                   top: 0,
                   height: 48,
