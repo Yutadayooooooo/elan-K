@@ -44,11 +44,12 @@ class SettingSleepModePageState extends State<SettingSleepModePage> {
         var selectedHour = 0;
         var selectedMinute = 0;
         var settingKey = index == 0 ? 'SLEEP_START' : 'SLEEP_END';
-        if (index == 0) {
-          List<String> parts = AppManager.appsettings[settingKey].split(':');
-          selectedHour = int.parse(parts[0]);
-          selectedMinute = int.parse(parts[1]);
-        }
+        List<String> parts = AppManager.appsettings[settingKey].split(':');
+        selectedHour = int.parse(parts[0]);
+        selectedMinute = int.parse(parts[1]);
+        print(AppManager.appsettings[settingKey]);
+        print(selectedHour);
+        print(selectedMinute);
         return Container(
           height: 250,
           padding: const EdgeInsets.only(top: 10),
@@ -108,18 +109,20 @@ class SettingSleepModePageState extends State<SettingSleepModePage> {
                     Expanded(
                       child: CupertinoPicker(
                         scrollController: FixedExtentScrollController(
-                          initialItem: selectedMinute,
+                          initialItem: (selectedMinute / 15).toInt(),
                         ),
                         itemExtent: 40,
                         onSelectedItemChanged: (int value) {
                           setState(() {
-                            selectedMinute = value;
+                            selectedMinute = value * 15;
                           });
                         },
-                        children: List.generate(60, (index) {
+                        children: List.generate(4, (index) {
+                          final minute = index * 15; // 15分刻み
+                          final minText = (minute < 10 ? '0' : '') + minute.toString();
                           return Center(
                             child: Text(
-                              '${index}分',
+                              '${minText}分',
                               style: TextStyle(fontSize: 20),
                             ),
                           );
