@@ -29,6 +29,10 @@ class _LoginPageState extends State<LoginPage> {
 
     _initModel();
 
+    if (AppDefine.room) {
+      _loginMode = 'user';
+    }
+
     Future(() async {
 
       if (await Permission.camera.status == PermissionStatus.denied) {
@@ -154,6 +158,12 @@ class _LoginPageState extends State<LoginPage> {
     //   Navigator.of(context).pushReplacementNamed("/sensorweb");
     //   return;
     // }
+
+    if (AppDefine.room) {
+      context.go(AppRoute.roomPage);
+      return;
+    }
+
     if (mcsType == '5' || mcsType == '4' || mcsType == '3') {
       context.go(AppRoute.homePage);
     } else {
@@ -368,7 +378,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                       ),
-                      if (1 == 1)
+                      if (!AppDefine.room)
                         ... [
                           const SizedBox(height: 20),
                           Align(

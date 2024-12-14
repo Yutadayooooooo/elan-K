@@ -1,5 +1,8 @@
 import 'dart:convert';
 
+import 'package:ami/app_define.dart';
+import 'package:ami/pages/room/room_page.dart';
+import 'package:ami/pages/room/room_talk_page.dart';
 import 'package:ami/pages/setting/setting_account_list_page.dart';
 import 'package:ami/pages/setting/setting_info_message_page.dart';
 import 'package:ami/pages/setting/setting_info_photo_page.dart';
@@ -32,6 +35,8 @@ class AppRoute {
   static const settingNotifyGroupPage = '/setting/notify_group';
   static const settingAccountListPage = '/setting/account_list';
   static const webviewPage = '/webview';
+  static const roomPage = '/room_page';
+  static const roomTalkPage = '/room_talk_page';
 
 
   static Future<GoRouter> createRouter(bool isInitialize, bool isLogin) async {
@@ -40,6 +45,10 @@ class AppRoute {
       initialLocaion = tutorialPage;
     } else if (!isLogin) {
       initialLocaion = loginPage;
+    }
+
+    if (AppDefine.room) {
+      initialLocaion = isLogin ? roomPage : loginPage;
     }
 
     return GoRouter(
@@ -121,6 +130,17 @@ class AppRoute {
             String title = mp['title']!;
             String url = mp['url']!;
             return WebviewPage(title: title, url: url);
+          },
+        ),
+        GoRoute(
+            name: 'room',
+            path: roomPage,
+            builder: (context, state) => RoomPage()
+        ),
+        GoRoute(
+          path: roomTalkPage,
+          builder: (BuildContext context, GoRouterState state) {
+            return RoomTalkPage();
           },
         ),
       ],

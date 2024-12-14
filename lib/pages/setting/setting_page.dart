@@ -436,6 +436,9 @@ class _SettingPageState extends State<SettingPage> {
           }),
         ]);
       }
+      if (AppDefine.room) {
+        listContainers.add(switchListContainer('着信音ミュート', 'MUTE'));
+      }
     }
 
     listContainers.addAll([_separator, abountListContainer()]);
@@ -584,7 +587,7 @@ class _SettingPageState extends State<SettingPage> {
 
   Widget switchListContainer(String title, String key) {
     var isSwtich = false;
-    if (key == 'AUTO_RECEIVE' || key == 'VOLUME_CALL' || key == 'CLOCKDISP') {
+    if (key == 'AUTO_RECEIVE' || key == 'VOLUME_CALL' || key == 'CLOCKDISP' || key == 'MUTE') {
       if (AppManager.appsettings[key] == '1') {
         isSwtich = true;
       }
@@ -623,7 +626,7 @@ class _SettingPageState extends State<SettingPage> {
               if (value) {
                 val = '1';
               }
-              if (key == 'AUTO_RECEIVE' || key == 'VOLUME_CALL' || key == 'CLOCKDISP') {
+              if (key == 'AUTO_RECEIVE' || key == 'VOLUME_CALL' || key == 'CLOCKDISP' || key == 'MUTE') {
                 AppManager.saveAppSetting(key, val);
               }
               else if (key == 'SLEEP_MODE' || key == 'CALLSTATUSDISP') {

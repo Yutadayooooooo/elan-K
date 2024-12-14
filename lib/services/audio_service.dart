@@ -38,7 +38,6 @@ class AudioService {
       return;
     }
     await _call!.stop();
-    await _call!.dispose();
     _call = null;
   }
 

@@ -11,6 +11,7 @@ class AppDefine {
   static const elanApp = false;
   static const _amiApp = true;
   static bool get amiApp => _amiApp;
+  static bool room = true;
 
   // ライブ画像アップロード
   static bool useWebLiveImage = false;
