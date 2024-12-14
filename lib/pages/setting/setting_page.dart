@@ -426,7 +426,7 @@ class _SettingPageState extends State<SettingPage> {
 
     if (AppDefine.amiApp) {
       // listContainers.add(switchListContainer('表示設定', 'CALLSTATUSDISP'));
-      if (mode == 'user' || mode == 'staff2') {
+      if (!AppDefine.room && (mode == 'user' || mode == 'staff2')) {
         listContainers.addAll([
           _separator,
           // nextListContainer('お知らせ動画', '', _toInfoVideoPage),
@@ -437,7 +437,14 @@ class _SettingPageState extends State<SettingPage> {
         ]);
       }
       if (AppDefine.room) {
-        listContainers.add(switchListContainer('着信音ミュート', 'MUTE'));
+        if (AppDefine.elanApp) {
+          listContainers.add(switchListContainer('通話切替 ビデオ/音声', 'VIDEO_TALK'));
+          listContainers.add(nextListContainer('就寝モード', '',  () async {
+            await context.push(AppRoute.settingSleepModePage);
+          }));
+        } else {
+          listContainers.add(switchListContainer('着信音ミュート', 'MUTE'));
+        }
       }
     }
 
@@ -587,7 +594,7 @@ class _SettingPageState extends State<SettingPage> {
 
   Widget switchListContainer(String title, String key) {
     var isSwtich = false;
-    if (key == 'AUTO_RECEIVE' || key == 'VOLUME_CALL' || key == 'CLOCKDISP' || key == 'MUTE') {
+    if (key == 'AUTO_RECEIVE' || key == 'VOLUME_CALL' || key == 'CLOCKDISP' || key == 'MUTE' || key == 'VIDEO_TALK') {
       if (AppManager.appsettings[key] == '1') {
         isSwtich = true;
       }
@@ -626,7 +633,7 @@ class _SettingPageState extends State<SettingPage> {
               if (value) {
                 val = '1';
               }
-              if (key == 'AUTO_RECEIVE' || key == 'VOLUME_CALL' || key == 'CLOCKDISP' || key == 'MUTE') {
+              if (key == 'AUTO_RECEIVE' || key == 'VOLUME_CALL' || key == 'CLOCKDISP' || key == 'MUTE' || key == 'VIDEO_TALK') {
                 AppManager.saveAppSetting(key, val);
               }
               else if (key == 'SLEEP_MODE' || key == 'CALLSTATUSDISP') {

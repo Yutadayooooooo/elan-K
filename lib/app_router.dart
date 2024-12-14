@@ -8,6 +8,7 @@ import 'package:ami/pages/setting/setting_info_message_page.dart';
 import 'package:ami/pages/setting/setting_info_photo_page.dart';
 import 'package:ami/pages/setting/setting_info_video_page.dart';
 import 'package:ami/pages/setting/setting_notify_group_page.dart';
+import 'package:ami/pages/setting/setting_sleep_mode_page.dart';
 import 'package:ami/pages/talk/talk_page.dart';
 import 'package:ami/pages/tutorial/tutorial_page.dart';
 import 'package:ami/pages/webview/webview_page.dart';
@@ -34,6 +35,7 @@ class AppRoute {
   static const settingInfoMessagePage = '/setting/info_message';
   static const settingNotifyGroupPage = '/setting/notify_group';
   static const settingAccountListPage = '/setting/account_list';
+  static const settingSleepModePage = '/setting/sleep_mode';
   static const webviewPage = '/webview';
   static const roomPage = '/room_page';
   static const roomTalkPage = '/room_talk_page';
@@ -119,6 +121,10 @@ class AppRoute {
             GoRoute(
               path: 'account_list',
               builder: (context, state) => SettingAccountListPage(),
+            ),
+            GoRoute(
+              path: 'sleep_mode',
+              builder: (context, state) => SettingSleepModePage(),
             ),
           ],
         ),

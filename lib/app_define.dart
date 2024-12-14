@@ -8,7 +8,7 @@ class AppDefine {
   static final mcsaURL = 'https://mcs-a.com/frinurse/';
   static String get baseURL => _amiApp ? amiURL : mcsaURL;
   static const appLabel = 'このアプリ';
-  static const elanApp = false;
+  static const elanApp = true;
   static const _amiApp = true;
   static bool get amiApp => _amiApp;
   static bool room = true;
