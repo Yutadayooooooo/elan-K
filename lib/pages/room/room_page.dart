@@ -396,6 +396,8 @@ class _RoomPageState extends State<RoomPage>
     if (_imageFiles.isNotEmpty) {
       _stopMovie();
       _imageFileIndex = 0;
+    } else {
+      _imageFileIndex = -1;
     }
 
     if (_infoVideo.isNotEmpty && currentVideo != _infoVideo) {
@@ -410,7 +412,7 @@ class _RoomPageState extends State<RoomPage>
 
   void _startImageAnimation() {
     _stopImageAnimation();
-    _slideShowTimer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
+    _slideShowTimer = Timer.periodic(const Duration(seconds: 30), (Timer timer) {
       _slideShow();
     });
   }
@@ -749,15 +751,15 @@ class _RoomPageState extends State<RoomPage>
                         Column(
                           children: [
                             SizedBox(
-                              width: 120,
-                              height: 40,
+                              width: 240,
+                              height: 80,
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   foregroundColor: Colors.white,
                                   backgroundColor:
                                   Color.fromARGB(255, 115, 176, 236),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(20),
                                   ),
                                 ),
                                 onPressed: () async {
@@ -769,15 +771,15 @@ class _RoomPageState extends State<RoomPage>
                             ),
                             const SizedBox(height: 8,),
                             SizedBox(
-                              width: 120,
-                              height: 40,
+                              width: 240,
+                              height: 80,
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   foregroundColor: Colors.white,
                                   backgroundColor:
                                   Color.fromARGB(255, 115, 176, 236),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(20),
                                   ),
                                 ),
                                 onPressed: () async {
