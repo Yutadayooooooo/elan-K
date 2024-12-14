@@ -206,7 +206,7 @@ class SocketIOService {
   void startConnectTimer() {
     stopTimer();
 
-    _timer = Timer.periodic(const Duration(milliseconds: 2 * 1000), (Timer timer) {
+    _timer = Timer.periodic(const Duration(milliseconds: 1 * 1000), (Timer timer) {
       _connect();
     });
   }
