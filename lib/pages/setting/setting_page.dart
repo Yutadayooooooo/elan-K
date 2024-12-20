@@ -427,10 +427,14 @@ class _SettingPageState extends State<SettingPage> {
     if (AppDefine.amiApp) {
       // listContainers.add(switchListContainer('表示設定', 'CALLSTATUSDISP'));
       if (!AppDefine.room && (mode == 'user' || mode == 'staff2')) {
+        listContainers.add(_separator);
+        if (AppDefine.elanApp) {
+          listContainers.addAll([
+            nextListContainer('お知らせ動画', '', _toInfoVideoPage),
+            nextListContainer('スライドショー', '', _toInfoPhotoPage),
+          ]);
+        }
         listContainers.addAll([
-          _separator,
-          // nextListContainer('お知らせ動画', '', _toInfoVideoPage),
-          // nextListContainer('スライドショー', '', _toInfoPhotoPage),
           nextListContainer('メッセージ配信', '', () async {
             await context.push(AppRoute.settingInfoMessagePage);
           }),
