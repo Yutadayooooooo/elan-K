@@ -674,7 +674,6 @@ class _HomePageState extends State<HomePage>
         Expanded(
           child: GestureDetector(
             onTap: () {
-              AppManager.callId = address.id;
               _selectAddressConfirm(address);
             },
             child: Container(
@@ -1143,11 +1142,54 @@ class _HomePageState extends State<HomePage>
 
   Future<void> _selectAddressConfirm(Address address) async {
     final message = address.name + 'に発信しますか？';
+    if (AppDefine.elanApp) {
+      final type = await _showSelectAddressConfirmDialog(context, message);
+      if (type == 1) {
+        AppManager.callId = address.id;
+        _selectAddress(address);
+      } else if (type == 2) {
+        AppManager.safetyCheckId = address.id;
+        _selectAddress(address);
+      }
+      return;
+    }
     bool call = await WidgetUtil.showSimpleConfirmDialog(context, message);
     if (call) {
       AppManager.callId = address.id;
       _selectAddress(address);
     }
+  }
+
+  Future<int> _showSelectAddressConfirmDialog(BuildContext context, String message, {String title = '確認'}) async {
+    return await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: <Widget>[
+            SimpleDialogOption(
+              child: const Text('はい'),
+              onPressed: () {
+                Navigator.of(context).pop(1);
+              },
+            ),
+            SimpleDialogOption(
+              child: const Text('いいえ'),
+              onPressed: () {
+                Navigator.of(context).pop(0);
+              },
+            ),
+            SimpleDialogOption(
+              child: const Text('見守り'),
+              onPressed: () {
+                Navigator.of(context).pop(2);
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _selectAddress(Address address) async {
@@ -1162,6 +1204,7 @@ class _HomePageState extends State<HomePage>
         _ready = false;
       });
       AppManager.selectUser = address;
+      print(AppManager.safetyCheckId);
       await context.push(AppRoute.talkPage);
 
       if (address.userType != 'S') {

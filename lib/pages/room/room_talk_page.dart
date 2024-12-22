@@ -261,17 +261,6 @@ class RoomTalkPageState extends State<RoomTalkPage>
     _callendIsEnabled = true;
     setAppStatus(AppStatus.Talk);
     audio.stopCall();
-    if (AppManager.appsettings['VIDEO_TALK'] == '1') {
-      // 音声のみ
-      AppManager.isVideoMute = true;
-    } else {
-      AppManager.isVideoMute = false;
-      var sendData = {
-        "id2": "toggle_video",
-        "val": '1'
-      };
-      socketservice.io.emit("talk", [sendData]);
-    }
   }
 
   void _cancelCall({bool isClose = true}) {

@@ -442,12 +442,15 @@ class _SettingPageState extends State<SettingPage> {
       }
       if (AppDefine.room) {
         if (AppDefine.elanApp) {
-          listContainers.add(switchListContainer('通話切替 ビデオ/音声', 'VIDEO_TALK'));
           listContainers.add(nextListContainer('就寝モード', '',  () async {
             await context.push(AppRoute.settingSleepModePage);
           }));
         } else {
           listContainers.add(switchListContainer('着信音ミュート', 'MUTE'));
+        }
+      } else {
+        if (AppDefine.elanApp) {
+          listContainers.add(switchListContainer('通話切替 ビデオ/音声', 'VIDEO_TALK'));
         }
       }
     }

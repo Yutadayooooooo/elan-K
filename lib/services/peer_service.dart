@@ -350,7 +350,9 @@ class Peer {
       _addDataChannel(id, channel);
     };
 
-    setVideoEnabled(false);
+    if (media != 'sendonly') {
+      setVideoEnabled(false);
+    }
     return pc;
   }
 

@@ -83,6 +83,10 @@ with WidgetsBindingObserver, SocketIOServiceDelegate,
         AppManager.acceptId = '';
         // prefs.remove('accept_id');
       }
+      if (AppManager.safetyCheckId.isNotEmpty) {
+        AppManager.isMute = true;
+        socketservice.io.emit("safety_check", [AppManager.selectUser!.id]);
+      }
       if (AppManager.appsettings["AUTO_RECEIVE"] == '1') {
 
       }
@@ -235,6 +239,20 @@ with WidgetsBindingObserver, SocketIOServiceDelegate,
     _setAppStatus(AppStatus.Talk);
     audio.stopCall();
 
+    Future.delayed(Duration(milliseconds: 300), () {
+      if (AppManager.appsettings['VIDEO_TALK'] != '1') {
+        AppManager.isVideoMute = false;
+        setState(() {
+          _video = true;
+        });
+        var sendData = {
+          "id2": "toggle_video",
+          "val": '1'
+        };
+        socketservice.io.emit("talk", [sendData]);
+        peer.setVideoEnabled(true);
+      }
+    });
     Future.delayed(Duration(seconds: 1), () {
       var sendData = {
         "id2": "talk_info",
@@ -338,6 +356,17 @@ with WidgetsBindingObserver, SocketIOServiceDelegate,
     _close();
   }
 
+  /// 見守り
+  void _endSafetyCheck() {
+    AppManager.safetyCheckId = '';
+    AppManager.isMute = false;
+    _close();
+  }
+
+  void _safetyCheckEndButton() {
+    _endSafetyCheck();
+  }
+
   /// *******************************************************************************************
   /// other buttons
   /// *******************************************************************************************
@@ -420,7 +449,11 @@ with WidgetsBindingObserver, SocketIOServiceDelegate,
 
   @override
   Widget build(BuildContext context) {
+    final Size size = MediaQuery.of(context).size;
     var address = AppManager.selectUser;
+    if (AppManager.safetyCheckId.isNotEmpty) {
+      return _safetyCheckWidget();
+    }
     if (address == null || AppManager.status == AppStatus.None || _isNear || AppManager.status == AppStatus.Response) {
       return Container(color: Colors.black);
     }
@@ -428,7 +461,7 @@ with WidgetsBindingObserver, SocketIOServiceDelegate,
       return _callWidget();
     }
     return _talkWidget();
-    final Size size = MediaQuery.of(context).size;
+
     double verticalPadding = 150.0;
     double verticalPadding2 = 50.0;
     if (size.height < 700) {
@@ -756,6 +789,71 @@ with WidgetsBindingObserver, SocketIOServiceDelegate,
     );
   }
 
+  Scaffold _safetyCheckWidget() {
+    final Size size = MediaQuery.of(context).size;
+
+    return Scaffold(
+      backgroundColor: Color.fromARGB(255, 255, 255, 232),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Positioned(
+              top: 0,
+              left: 0,
+              height: size.height,
+              width: size.width - _remoteMargin,
+              child: RTCVideoView(_remoteRenderer, mirror: false, objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,),
+            ),
+            _safetyCheckMenu(size),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _safetyCheckMenu(Size size) {
+    return Positioned(
+      bottom: 8.0,
+      left: 0,
+      width: size.width,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          MaterialButton(
+            onPressed: () {
+              socketservice.io.emit("safety_check_end", [AppManager.safetyCheckId]);
+              peer.close();
+              _safetyCheckEndButton();
+            },
+            color: Colors.red,
+            textColor: Colors.white,
+            padding: const EdgeInsets.all(8),
+            shape: const CircleBorder(),
+            child: const Icon(
+              Icons.clear,
+              size: 16,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(left: 12.0),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.yellow,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+              child: const Text('安静目視中',
+                style: TextStyle(
+                  fontSize: 20,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// *******************************************************************************************
   /// socket io
   /// *******************************************************************************************
@@ -838,6 +936,14 @@ with WidgetsBindingObserver, SocketIOServiceDelegate,
         _call();
       }
     }
+    else if (message == 'safety_check_stop') {
+      peer.close();
+      _endSafetyCheck();
+    }
+    else if (message == 'safety_check_error') {
+      peer.close();
+      _endSafetyCheck();
+    }
   }
 
   @override
@@ -873,6 +979,17 @@ with WidgetsBindingObserver, SocketIOServiceDelegate,
   void onTalkMessage(data) {
     String id2 = data['id2'];
     print('talk message $id2');
+
+    if (id2 == 'toggle_video') {
+      if (data['val'].toString() == '1') {
+        _video = true;
+      } else {
+        _video = false;
+      }
+      setState(() {
+        peer.setVideoEnabled(_video);
+      });
+    }
   }
 
   @override
@@ -912,6 +1029,7 @@ with WidgetsBindingObserver, SocketIOServiceDelegate,
     } else if (id == AppManager.talkId2) {
       _setRemote2Stream(stream);
     } else if (id == AppManager.safetyCheckId) {
+      print('onremote stream safetycheck id');
       _setRemoteStream(stream);
     }
   }

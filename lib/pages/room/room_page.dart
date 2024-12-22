@@ -55,7 +55,8 @@ class _RoomPageState extends State<RoomPage>
   double _sleepBrightness = 0.5;
   String _statusImage = '';
   Peer peer = Peer();
-  bool _isVideoPlay = false;
+  bool _isVideoLoop = false;
+  VideoPlayerController? _controller;
 
   var _safetyCheckIds = [];
   String _infoMessage = '';
@@ -64,7 +65,13 @@ class _RoomPageState extends State<RoomPage>
   var _imageFileIndex = -1;
   double _imageOpacity = 0.0;
 
-  VideoPlayerController? _controller;
+  bool _debugToast = false;
+
+  void _showDebugToast(String message) {
+    if (_debugToast) {
+      AppManager.toast(message);
+    }
+  }
 
   @override
   void initState() {
@@ -81,9 +88,13 @@ class _RoomPageState extends State<RoomPage>
 
     socketservice.delegate = this;
 
-    Future(() {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+
+    Future(() async {
       _brightnessSetting();
-      _getInfo();
     });
   }
 
@@ -106,6 +117,7 @@ class _RoomPageState extends State<RoomPage>
       AppManager.requestPermission();
       socketservice.startConnectTimer();
       _version = await AppManager.appVersion();
+      _startGetInfoTimer(isGet: true);
     }
 
     if (AppManager.appsettings['SLEEP_MODE'] == '1' ||
@@ -115,14 +127,6 @@ class _RoomPageState extends State<RoomPage>
         _isSleep = true;
       });
     }
-
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
-
-    _startGetInfoTimer();
-    _startImageAnimation();
   }
 
   @override
@@ -136,7 +140,6 @@ class _RoomPageState extends State<RoomPage>
       socketservice.reconnect = true;
       socketservice.startConnectTimer();
       _startGetInfoTimer();
-      _startImageAnimation();
     } else if (state == AppLifecycleState.paused) {
       // sensorService.stopWatch();
       _active = false;
@@ -191,12 +194,71 @@ class _RoomPageState extends State<RoomPage>
     _imageFiles = [];
   }
 
-  void _startGetInfoTimer() {
+  void _startGetInfoTimer({bool isGet = false}) {
+    print('start get info timer $isGet');
     _stopGetInfoTimer();
+    if (isGet) {
+      _getInfo();
+    }
 
     _getInfoTimer = Timer.periodic(const Duration(seconds: 30), (Timer timer) {
       _getInfo();
     });
+  }
+
+  Future<void> _getInfo() async {
+    var url = '${AppDefine.baseURL}api/info?code=${AppManager.delegatorCode}&mst_id=${AppManager.myId}';
+    _showDebugToast(url);
+    print(url);
+    print(DateTime.now());
+    final dio = Dio();
+    var data = await dio.get(url,)
+        .then((response) {
+      print(response.data);
+      return response.data;
+    }).catchError((err) {
+      print(err);
+      return null;
+    });
+
+    if (data == null) {
+      return;
+    }
+
+    _infoMessage = data['message'].toString();
+
+    final currentVideo = _infoVideo;
+    _infoVideo = data['video'].toString();
+    var _fileChanged = false;
+    if (_imageFiles.length != data['files'].length) {
+      _fileChanged = true;
+    } else {
+      for (var i = 0; i < data['files'].length; i++) {
+        if (_imageFiles[i] != data['files'][i]) {
+          _fileChanged = true;
+          break;
+        }
+      }
+    }
+    if (_fileChanged) {
+      _imageFileIndex = -1;
+      if (_imageFiles.isNotEmpty) {
+        _stopMovie();
+      }
+      _imageFiles = data['files'];
+      _startImageAnimation();
+    }
+
+    _isVideoLoop = data['video_loop'].toString() == '1';
+
+    if (_infoVideo.isNotEmpty && currentVideo != _infoVideo) {
+      _startMovie();
+    }
+
+    if (mounted) {
+      setState(() {
+      });
+    }
   }
 
   Future<void> _logout() async {
@@ -234,14 +296,16 @@ class _RoomPageState extends State<RoomPage>
   Future<void> _toSetting() async {
     _stopTimers();
     _disconnect();
+    _safetyCheckIds.clear();
     context.read<AddressStore>().clear();
     _active = false;
     await context.push(AppRoute.settingPage);
+    _active = true;
     print('from setting to room');
     socketservice.reconnect = true;
     socketservice.delegate = this;
     socketservice.startConnectTimer();
-    _startGetInfoTimer();
+    _startGetInfoTimer(isGet: true);
     _startImageAnimation();
   }
 
@@ -278,6 +342,7 @@ class _RoomPageState extends State<RoomPage>
     _stopGetInfoTimer();
     _stopImageAnimation();
     _controller?.pause();
+    _safetyCheckEnd();
 
     await context.push(AppRoute.roomTalkPage);
 
@@ -368,50 +433,9 @@ class _RoomPageState extends State<RoomPage>
     }
   }
 
-  Future<void> _getInfo() async {
-    var url = '${AppDefine.baseURL}api/info?code=' +
-        AppManager.delegatorCode +
-        '&mst_id=' +
-        AppManager.myId;
-    print(url);
-    final dio = Dio();
-    var data = await dio.get(url,)
-        .then((response) {
-      print(response.data);
-      return response.data;
-    }).catchError((err) {
-      print(err);
-      return null;
-    });
-
-    if (data == null) {
-      return;
-    }
-
-    _infoMessage = data['message'].toString();
-
-    final currentVideo = _infoVideo;
-    _infoVideo = data['video'];
-    _imageFiles = data['files'];
-    if (_imageFiles.isNotEmpty) {
-      _stopMovie();
-      _imageFileIndex = 0;
-    } else {
-      _imageFileIndex = -1;
-    }
-
-    if (_infoVideo.isNotEmpty && currentVideo != _infoVideo) {
-      _startMovie();
-    }
-
-    if (mounted) {
-      setState(() {
-      });
-    }
-  }
-
   void _startImageAnimation() {
     _stopImageAnimation();
+    _slideShow();
     _slideShowTimer = Timer.periodic(const Duration(seconds: 30), (Timer timer) {
       _slideShow();
     });
@@ -435,10 +459,8 @@ class _RoomPageState extends State<RoomPage>
           _imageOpacity = 0.0;
         });
         Future.delayed(Duration(milliseconds: 1000), () {
+          _imageFileIndex = (_imageFileIndex + 1) < _imageFiles.length ? _imageFileIndex + 1 : 0;
           setState(() {
-            _imageFileIndex = (_imageFileIndex + 1) < _imageFiles.length
-                ? _imageFileIndex + 1
-                : 0;
             _imageOpacity = 1.0;
           });
         });
@@ -456,7 +478,7 @@ class _RoomPageState extends State<RoomPage>
         setState(() {});
         // 動画を自動再生
         _controller!.play();
-        _controller!.setLooping(true); // ループ再生を有効化
+        _controller!.setLooping(_isVideoLoop); // ループ再生を有効化
       });
   }
 
@@ -489,6 +511,7 @@ class _RoomPageState extends State<RoomPage>
     _active = false;
     _stopGetInfoTimer();
     _controller?.pause();
+    _safetyCheckEnd();
     await context.push(AppRoute.roomTalkPage);
 
     _startGetInfoTimer();
@@ -501,16 +524,23 @@ class _RoomPageState extends State<RoomPage>
   }
 
   void _receiveSafetyCheck(String udid) {
-    if (AppManager.appsettings['SLEEP_MODE'] != '1') {
-      socketservice.io.emit("safety_check_error", [udid]);
-      return;
-    }
-    if (!_isSleep) {
+    // if (AppManager.appsettings['SLEEP_MODE'] != '1') {
+    //   socketservice.io.emit("safety_check_error", [udid]);
+    //   return;
+    // }
+    // if (!_isSleep) {
+    //   socketservice.io.emit("safety_check_error", [udid]);
+    //   return;
+    // }
+    _showDebugToast("_receiveSafetyCheck");
+    if (!_active) {
+      _showDebugToast("_receiveSafetyCheck not active");
       socketservice.io.emit("safety_check_error", [udid]);
       return;
     }
 
     if (_safetyCheckIds.isNotEmpty) {
+      _showDebugToast("_receiveSafetyCheck _safetyCheckIds.isNotEmpty");
       socketservice.io.emit("safety_check_error", [udid]);
       return;
     }
@@ -619,8 +649,8 @@ class _RoomPageState extends State<RoomPage>
     if (size.width > size.height) {
       callImageSize = min(size.height * 0.7, 500.0);
     }
-    const messageHeight = 58.0;
-    const messageFontSize = 48.0;
+    const messageHeight = 78.0;
+    const messageFontSize = 64.0;
     var message = _infoMessage;
     if (_infoMessage.length * messageFontSize < size.width) {
       var addChars = ((size.width - (_infoMessage.length * messageFontSize)) / messageFontSize).floor();
@@ -677,7 +707,7 @@ class _RoomPageState extends State<RoomPage>
                     fontWeight: FontWeight.bold,
                   )),
             ), // メッセージ
-            if (!sleepMode && _imageFileIndex >= 0) ...[
+            if (!sleepMode && _imageFiles.length > _imageFileIndex && _imageFileIndex > -1) ...[
               Container(
                 color: Colors.black,
               ),
@@ -759,14 +789,14 @@ class _RoomPageState extends State<RoomPage>
                                   backgroundColor:
                                   Color.fromARGB(255, 115, 176, 236),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
+                                    borderRadius: BorderRadius.circular(40),
                                   ),
                                 ),
                                 onPressed: () async {
                                   // _startMovie();
                                   _tap();
                                 },
-                                child: const Text("一斉呼出"),
+                                child: WidgetUtil.middleText('一斉呼出', fontSize: 30, color: Colors.white,),
                               ),
                             ),
                             const SizedBox(height: 8,),
@@ -779,13 +809,13 @@ class _RoomPageState extends State<RoomPage>
                                   backgroundColor:
                                   Color.fromARGB(255, 115, 176, 236),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
+                                    borderRadius: BorderRadius.circular(40),
                                   ),
                                 ),
                                 onPressed: () async {
                                   _toSetting();
                                 },
-                                child: const Text("設定"),
+                                child: WidgetUtil.middleText('設定', fontSize: 30, color: Colors.white,),
                               ),
                             ),
                           ],
@@ -840,6 +870,7 @@ class _RoomPageState extends State<RoomPage>
   @override
   void onAppMessage(data) {
     String message = data['message'];
+    _showDebugToast("App Message:$message");
     if (message == 'from_server') {
       if (data['productName'] == '%logined') {
         //   AppManager.toast("ログイン済のアカウントです。");
@@ -848,25 +879,30 @@ class _RoomPageState extends State<RoomPage>
       setState(() {
         _isconnect = true;
       });
-    } else if (message == 'call') {
+    }
+    else if (message == 'call') {
       if (data["info"]["udid"] == null) {
         return;
       }
       final udid = data["info"]["udid"];
       _receive(udid);
-    } else if (message == 'auto_receives') {
+    }
+    else if (message == 'auto_receives') {
       _onAutoReceives();
-    } else if (message == 'safety_check') {
+    }
+    else if (message == 'safety_check') {
       if (data["udid"] == null) {
         return;
       }
       _receiveSafetyCheck(data["udid"].toString());
-    } else if (message == 'safety_check_end') {
+    }
+    else if (message == 'safety_check_end') {
       if (data["udid"] == null) {
         return;
       }
       _receiveSafetyCheckEnd(data["udid"]);
-    } else if (message == 'call_button') {
+    }
+    else if (message == 'call_button') {
       _onCallButton();
     }
   }
