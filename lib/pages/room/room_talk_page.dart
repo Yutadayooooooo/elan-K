@@ -80,6 +80,7 @@ class RoomTalkPageState extends State<RoomTalkPage>
     peer.onIceCandidate = _onIceCandidate;
     _controller.delegate = this;
     AppManager.allTalking = false;
+    AppManager.isVideoMute = true;
     _initRenderers();
   }
 
