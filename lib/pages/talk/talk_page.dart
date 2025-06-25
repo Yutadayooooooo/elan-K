@@ -867,6 +867,23 @@ with WidgetsBindingObserver, SocketIOServiceDelegate,
     if (message == '') {
 
     }
+    else if (message == 'call') {
+      if (data["info"]["udid"] == null) {
+        return;
+      }
+
+      if (AppDefine.elanApp) {
+        if (data["info"]["udid"] != AppManager.selectUser!.id && AppManager.status == AppStatus.Talk) {
+          var address = context.read<AddressStore>().find(data["info"]["udid"]);
+          if (address != null) {
+            setState(() {
+              _callingId = address.id;
+              _callingName = address.name;
+            });
+          }
+        }
+      }
+    }
     else if (message == 'status_change') {
       print('select user status ${data["info"]["STATUS"]}');
       if (data["info"]["MYID"] != null && data["info"]["MYID"] == AppManager.selectUser!.id) {
