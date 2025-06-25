@@ -94,18 +94,6 @@ class _RoomPageState extends State<RoomPage>
     ]);
 
     Future(() async {
-      _brightnessSetting();
-    });
-  }
-
-  @override
-  Future<void> didChangeDependencies() async {
-    super.didChangeDependencies();
-    print('room didChangeDependencies');
-
-    if (_init) {
-      _init = false;
-
       var load = await AppManager.loadSetting();
       if (!load) {
         _logout();
@@ -113,12 +101,27 @@ class _RoomPageState extends State<RoomPage>
 
       _loadAddress();
       AppManager.loadAutoReceive();
-
       AppManager.requestPermission();
+
+      _brightnessSetting();
       socketservice.startConnectTimer();
+
+      if (socketservice.connected) {
+        _isconnect = true;
+        Future(() {
+          socketservice.io.emit("clients_status", [AppManager.settings['addressGroup']]);
+        });
+      }
+
       _version = await AppManager.appVersion();
       _startGetInfoTimer(isGet: true);
-    }
+    });
+  }
+
+  @override
+  Future<void> didChangeDependencies() async {
+    super.didChangeDependencies();
+    print('room didChangeDependencies');
 
     if (AppManager.appsettings['SLEEP_MODE'] == '1' ||
         AppManager.appsettings['CLOCKDISP'] == '1') {
@@ -228,6 +231,7 @@ class _RoomPageState extends State<RoomPage>
     _infoMessage = data['message'].toString();
 
     final currentVideo = _infoVideo;
+    final currentVideoLoop = _isVideoLoop;
     _infoVideo = data['video'].toString();
     var _fileChanged = false;
     if (_imageFiles.length != data['files'].length) {
@@ -249,9 +253,13 @@ class _RoomPageState extends State<RoomPage>
       _startImageAnimation();
     }
 
+    if (_imageFiles.isNotEmpty) {
+      _infoVideo = '';
+    }
+
     _isVideoLoop = data['video_loop'].toString() == '1';
 
-    if (_infoVideo.isNotEmpty && currentVideo != _infoVideo) {
+    if (_infoVideo.isNotEmpty && (currentVideo != _infoVideo || currentVideoLoop != _isVideoLoop)) {
       _startMovie();
     }
 
@@ -452,6 +460,7 @@ class _RoomPageState extends State<RoomPage>
     if (mounted && _imageFiles.isNotEmpty) {
       if (_imageFiles.length == 1) {
         setState(() {
+          _imageFileIndex = 0;
           _imageOpacity = 1.0;
         });
       } else {
@@ -649,8 +658,8 @@ class _RoomPageState extends State<RoomPage>
     if (size.width > size.height) {
       callImageSize = min(size.height * 0.7, 500.0);
     }
-    const messageHeight = 78.0;
-    const messageFontSize = 64.0;
+    const messageHeight = 128.0;//78.0　メッセージ配信　20231223
+    const messageFontSize = 104.0;//64.0　メッセー文字サイズ　20231223
     var message = _infoMessage;
     if (_infoMessage.length * messageFontSize < size.width) {
       var addChars = ((size.width - (_infoMessage.length * messageFontSize)) / messageFontSize).floor();
@@ -659,6 +668,15 @@ class _RoomPageState extends State<RoomPage>
       }
     }
     final sleepMode = _isSleepMode();
+
+    const menuButtonWidth = 220.0;//240 横幅　20241223
+    const menuButtonHeight = 180.0;//80　高さ　20241223
+    const menuButtonMargin = 0.0;//8.0　間隔　20241223
+    const menuButtonFontSize = 58.0;//30.0　文字サイズ　20241223
+    const menuButton2Width = 140.0;//240 横幅　20241223
+    const menuButton2Height = 50.0;//80　高さ　20241223
+    const menuButton2Margin = 0.0;//8.0　間隔　20241223
+    const menuButton2FontSize = 26.0;//30.0　文字サイズ　20241223
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -696,13 +714,13 @@ class _RoomPageState extends State<RoomPage>
               ),
             ),
             Positioned(
-              bottom: 0,
+              bottom: 15,//20241223　0　メッセージのマージン
               height: messageHeight,
               width: size.width,
               child: Marquee(
                   text: message.isEmpty ? '　' : message,
                   style: const TextStyle(
-                    color: Color.fromARGB(255, 129, 146, 92),
+                    color: Color.fromARGB(255, 129, 146, 92),//メッセージの色
                     fontSize: messageFontSize,
                     fontWeight: FontWeight.bold,
                   )),
@@ -765,8 +783,8 @@ class _RoomPageState extends State<RoomPage>
                 ),
               ),
             ), // LED
-            Positioned(
-              top: iconSize,
+            Positioned(//一斉呼び出しボタン
+              top: 50,//iconSize 20241223
               left: 8,
               right: max(MediaQuery.of(context).padding.right, 8),
               // right: constraints.maxWidth,
@@ -781,41 +799,66 @@ class _RoomPageState extends State<RoomPage>
                         Column(
                           children: [
                             SizedBox(
-                              width: 240,
-                              height: 80,
+                              width: menuButtonWidth,
+                              height: menuButtonHeight,
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   foregroundColor: Colors.white,
                                   backgroundColor:
-                                  Color.fromARGB(255, 115, 176, 236),
+                                  const Color.fromARGB(125, 108, 108, 255),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(40),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
                                 ),
                                 onPressed: () async {
                                   // _startMovie();
                                   _tap();
                                 },
-                                child: WidgetUtil.middleText('一斉呼出', fontSize: 30, color: Colors.white,),
+                                child: WidgetUtil.middleText('呼 出', fontSize: menuButtonFontSize, color: Colors.grey, fontWeight: FontWeight.bold, textAlign: TextAlign.center,),
+                                autofocus: true,
                               ),
                             ),
-                            const SizedBox(height: 8,),
+                            const SizedBox(height: menuButtonMargin,),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ), // メニューボタン
+            Positioned(//設定ボタン
+              top: 550,//iconSize 20241223
+              left: 8,
+              right: max(MediaQuery.of(context).padding.right, 48),//8 20241223
+              // right: constraints.maxWidth,
+              child: Container(
+                color: Colors.transparent,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Column(
+                          children: [
+                            const SizedBox(height: menuButton2Margin,),
                             SizedBox(
-                              width: 240,
-                              height: 80,
+                              width: menuButton2Width,
+                              height: menuButton2Height,
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   foregroundColor: Colors.white,
                                   backgroundColor:
-                                  Color.fromARGB(255, 115, 176, 236),
+                                  const Color.fromARGB(155, 82, 82, 82),//255 115 176 236 20241223
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(40),
+                                    borderRadius: BorderRadius.circular(10),//circular(5) 20241223
                                   ),
                                 ),
                                 onPressed: () async {
                                   _toSetting();
                                 },
-                                child: WidgetUtil.middleText('設定', fontSize: 30, color: Colors.white,),
+                                child: WidgetUtil.middleText('設定', fontSize: menuButton2FontSize, color: Color.fromARGB(155, 155, 155, 155),),
                               ),
                             ),
                           ],
@@ -825,7 +868,7 @@ class _RoomPageState extends State<RoomPage>
                   ],
                 ),
               ),
-            ), // メニューボタン
+            ), // メニューボタン２
             if (AppManager.allTalking)
               Container(
                 color: Color.fromARGB(255, 208, 241, 255),
