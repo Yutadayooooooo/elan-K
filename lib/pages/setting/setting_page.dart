@@ -450,7 +450,7 @@ class _SettingPageState extends State<SettingPage> {
         }
       } else {
         if (AppDefine.elanApp) {
-          listContainers.add(switchListContainer('通話切替 ビデオ/音声', 'VIDEO_TALK'));
+          listContainers.add(videoTalkSwitchListContainer('通話切替', 'VIDEO_TALK'));
         }
       }
     }
@@ -655,6 +655,59 @@ class _SettingPageState extends State<SettingPage> {
               });
             },
             activeColor: Colors.red,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget videoTalkSwitchListContainer(String title, String key) {
+    var isSwtich = false;
+    if (AppManager.appsettings[key] == '1') {
+      isSwtich = true;
+    }
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(color: Color.fromARGB(255, 220, 220, 220)),
+        ),
+      ),
+      height: _listHeight,
+      padding: const EdgeInsets.all(10.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: _titleTextStyle1,
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Text(
+                'ビデオ',
+                style: _titleTextStyle1,
+              ),
+              CupertinoSwitch(
+                value: isSwtich,
+                onChanged: (value) {
+                  String val = '0';
+                  if (value) {
+                    val = '1';
+                  }
+                  AppManager.saveAppSetting(key, val);
+                  setState(() {
+                    _savedSwitch = !_savedSwitch;
+                  });
+                },
+                activeColor: Color.fromARGB(255, 240, 240, 240),
+              ),
+              Text(
+                '音声',
+                style: _titleTextStyle1,
+              ),
+            ],
           ),
         ],
       ),
