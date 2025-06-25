@@ -174,7 +174,7 @@ class SettingInfoVideoPageState extends State<SettingInfoVideoPage> {
 
     if (data != null) {
       if (data['status'].toString() == 'ok') {
-        _selectId = id;
+        _selectId = data['id'];
       }
     }
 
