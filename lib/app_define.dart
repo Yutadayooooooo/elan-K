@@ -26,7 +26,7 @@ class AppDefine {
   static const licenseURL = 'https://happybell.biz/license/index.html';
 
   static const absenceSec1 = 30 * 1000;
-  static const absenceSec2 = 10 * 1000;
+  static const absenceSec2 = 60 * 1000;
 
   static getRMSToken() {
     initializeDateFormatting("ja_JP");
