@@ -56,14 +56,14 @@ class _ClockWidgetState extends State<ClockWidget> {
 
   @override
   Widget build(BuildContext context) {
-    var timeHeight = 240.0;
-    var dateHeight = 100.0;
-    var dateLeft = 100.0;
-    var dateTimeMargin = 40.0;
+    var timeHeight = 360.0;//240.0　20241223　時間の上下移動
+    var dateHeight = 120.0;//100.0　20241223
+    var dateLeft = 100.0;//100.0　20241223
+    var dateTimeMargin = 10.0;//40.0　20241223　日付曜日の画面上からのマージン
     var centerY = MediaQuery.of(context).size.height / 2;
     var shortestSide = MediaQuery.of(context).size.shortestSide;
-    var fontSize1 = 80.0;
-    var fontSize2 = 200.0;
+    var fontSize1 = 90.0;//80.0
+    var fontSize2 = 300.0;//200.0
     // print(fontSize);
     if (shortestSide < 500) {
       timeHeight = 150;
@@ -87,7 +87,7 @@ class _ClockWidgetState extends State<ClockWidget> {
           child: Center(
             child: Text(_dateYearText,
                 style: TextStyle(
-                  color: const Color.fromARGB(255, 129, 146, 92),
+                  color: const Color.fromARGB(255, 110, 120, 70),//255, 129, 146, 92
                   fontSize: fontSize1,
                   fontWeight: FontWeight.bold,
                 )
@@ -103,7 +103,7 @@ class _ClockWidgetState extends State<ClockWidget> {
             child: Text(
               _text,
               style: TextStyle(
-                color: const Color.fromARGB(255, 129, 146, 92),
+                color: const Color.fromARGB(255, 110, 120, 70),//255, 129, 146, 92
                 fontSize: fontSize2,
                 fontWeight: FontWeight.bold,
               ),
