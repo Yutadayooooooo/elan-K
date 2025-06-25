@@ -34,7 +34,7 @@ class AppManager {
     "AUTO_RECEIVE": "0", "SLEEP_MODE": "0", "SLEEP_CLOCK": "0", "SLEEPMODEBRIGHTNESS": "0",
     "SENSOR0": "0", "SENSOR1": "0", "SENSOR2": "0", "SENSOR3": "0", "SENSOR4": "0", "SENSOR5": "0", "SENSOR8": "0", "SENSOR9": "0",
     "RINGTONE": "0", "CALLSCREENIMAGE": "0", "CALLSCREENIMAGEL": "0", "VOLUME_CALL": "0",
-    "CLOCKDISP": "0", "DISPLAYNUM": "3", "CALLSTATUSDISP": "0", "MUTE": "0", "VIDEO_TALK": "1", "SLEEP_START" : "22:00", "SLEEP_END" : "06:00",
+    "CLOCKDISP": "0", "DISPLAYNUM": "3", "CALLSTATUSDISP": "0", "MUTE": "0", "VIDEO_TALK": "0", "SLEEP_START" : "22:00", "SLEEP_END" : "06:00",
     "WEBLIVEIMAGEINTERVAL": "6"
   };
   static var autoreceives = {};
@@ -117,7 +117,7 @@ class AppManager {
       "AUTO_RECEIVE": "0", "SLEEP_MODE": "0", "SLEEP_CLOCK": "0", "SLEEPMODEBRIGHTNESS": "0",
       "SENSOR0": "0", "SENSOR1": "0", "SENSOR2": "0", "SENSOR3": "0", "SENSOR4": "0", "SENSOR5": "0", "SENSOR8": "0", "SENSOR9": "0",
       "RINGTONE": "0", "CALLSCREENIMAGE": "0", "CALLSCREENIMAGEL": "0", "VOLUME_CALL": "0",
-      "CLOCKDISP": "0", "DISPLAYNUM": "3", "CALLSTATUSDISP": "0", "MUTE": "0", "VIDEO_TALK": "1", "SLEEP_START" : "22:00", "SLEEP_END" : "06:00",
+      "CLOCKDISP": "0", "DISPLAYNUM": "3", "CALLSTATUSDISP": "0", "MUTE": "0", "VIDEO_TALK": "0", "SLEEP_START" : "22:00", "SLEEP_END" : "06:00",
       "WEBLIVEIMAGEINTERVAL": "6"
     };
   }
