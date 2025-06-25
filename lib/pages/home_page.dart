@@ -1144,10 +1144,11 @@ class _HomePageState extends State<HomePage>
     final message = address.name + 'に発信しますか？';
     if (AppDefine.elanApp) {
       final type = await _showSelectAddressConfirmDialog(context, message);
-      if (type == 1) {
+      final iType = type ?? 0;
+      if (iType == 1) {
         AppManager.callId = address.id;
         _selectAddress(address);
-      } else if (type == 2) {
+      } else if (iType == 2) {
         AppManager.safetyCheckId = address.id;
         _selectAddress(address);
       }
@@ -1160,7 +1161,7 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  Future<int> _showSelectAddressConfirmDialog(BuildContext context, String message, {String title = '確認'}) async {
+  Future<int?> _showSelectAddressConfirmDialog(BuildContext context, String message, {String title = '確認'}) async {
     return await showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -1169,19 +1170,19 @@ class _HomePageState extends State<HomePage>
           content: Text(message),
           actions: <Widget>[
             SimpleDialogOption(
-              child: const Text('はい'),
+              child: const Text('はい', style: TextStyle(fontSize: 13),),
               onPressed: () {
                 Navigator.of(context).pop(1);
               },
             ),
             SimpleDialogOption(
-              child: const Text('いいえ'),
+              child: const Text('いいえ', style: TextStyle(fontSize: 13),),
               onPressed: () {
                 Navigator.of(context).pop(0);
               },
             ),
             SimpleDialogOption(
-              child: const Text('見守り'),
+              child: const Text('見守り', style: TextStyle(fontSize: 13),),
               onPressed: () {
                 Navigator.of(context).pop(2);
               },
@@ -1655,21 +1656,21 @@ class _HomePageState extends State<HomePage>
                                           children: [
                                             Row(
                                               children: [
-                                                WidgetUtil.middleText(_talkLogs[index]['start']),
+                                                WidgetUtil.middleText(_talkLogs[index]['start'], fontSize: 24, fontWeight: FontWeight.bold),
                                                 const SizedBox(width: 12,),
-                                                WidgetUtil.middleText(_talkLogs[index]['duration']),
+                                                WidgetUtil.middleText(_talkLogs[index]['duration'], fontSize: 24, fontWeight: FontWeight.bold),
                                               ],
                                             ),
                                             Row(
                                               children: [
-                                                WidgetUtil.middleText(_talkLogs[index]['user_name']),
+                                                WidgetUtil.middleText(_talkLogs[index]['user_name'], fontSize: 24, fontWeight: FontWeight.bold),
                                                 const SizedBox(width: 12,),
-                                                WidgetUtil.middleText(_talkLogs[index]['office_name']),
+                                                WidgetUtil.middleText(_talkLogs[index]['office_name'], fontSize: 24, fontWeight: FontWeight.bold),
                                               ],
                                             ),
                                             Row(
                                               children: [
-                                                WidgetUtil.middleText(_talkLogs[index]['staff_name']),
+                                                WidgetUtil.middleText(_talkLogs[index]['staff_name'], fontSize: 24, fontWeight: FontWeight.bold),
                                               ],
                                             ),
                                           ],
@@ -1727,16 +1728,16 @@ class _HomePageState extends State<HomePage>
                                           children: [
                                             Row(
                                               children: [
-                                                WidgetUtil.middleText(_callLogs[index]['start']),
+                                                WidgetUtil.middleText(_callLogs[index]['start'], fontSize: 24, fontWeight: FontWeight.bold),
                                                 const SizedBox(width: 12,),
                                                 WidgetUtil.middleText(''),
                                               ],
                                             ),
                                             Row(
                                               children: [
-                                                WidgetUtil.middleText(address == null ? _callLogs[index]['name'] : address.name),
+                                                WidgetUtil.middleText(address == null ? _callLogs[index]['name'] : address.name, fontSize: 24, fontWeight: FontWeight.bold),//20241210
                                                 const SizedBox(width: 12,),
-                                                WidgetUtil.middleText(address == null ? '' : address.userName),
+                                                WidgetUtil.middleText(address == null ? '' : address.userName, fontSize: 24, fontWeight: FontWeight.bold),//20241210
                                               ],
                                             ),
                                           ],
@@ -1887,6 +1888,7 @@ class _HomePageState extends State<HomePage>
                                 child: WidgetUtil.basicText(
                                   'コール履歴',
                                   color: Colors.white,
+                                  fontSize: 16,//20241125追加
                                 ),
                                 onPressed: () async {
                                   _showCallLog();
@@ -1919,6 +1921,7 @@ class _HomePageState extends State<HomePage>
                                 child: WidgetUtil.basicText(
                                   '閉じる',
                                   color: Colors.white,
+                                  fontSize: 16,//20241125追加
                                 ),
                               ),
                             ),
@@ -1938,6 +1941,7 @@ class _HomePageState extends State<HomePage>
                                 child: WidgetUtil.basicText(
                                   '通話履歴',
                                   color: Colors.white,
+                                  fontSize: 16,//20241125追加
                                 ),
                                 onPressed: () async {
                                   _showTalkLog();
@@ -1970,6 +1974,7 @@ class _HomePageState extends State<HomePage>
                                 child: WidgetUtil.basicText(
                                   '閉じる',
                                   color: Colors.white,
+                                  fontSize: 16,//20241125追加
                                 ),
                               ),
                             ),
@@ -1998,8 +2003,8 @@ class _HomePageState extends State<HomePage>
                           if (!_showCalledHistory && !_showHistory && !_showCallHistory)
                             ... [
                               SizedBox(
-                                width: 60.0,
-                                height: iconSize - 20.0,
+                                width: 60.0,//60 着信履歴ボタン幅　74.0
+                                height: iconSize - 24.0,//20.0
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.grey,
@@ -2009,9 +2014,9 @@ class _HomePageState extends State<HomePage>
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                   ),
-                                  child: const Text("着信履歴",
+                                  child: const Text("着信",//2024　履歴削除
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 18,//16
                                       color: Colors.white,
                                     ),),
                                   onPressed: () async {
@@ -2021,8 +2026,8 @@ class _HomePageState extends State<HomePage>
                               ),
                               const SizedBox(width: 8,),
                               SizedBox(
-                                width: 60.0,
-                                height: iconSize - 20.0,
+                                width: 60.0,//通話履歴ボタン幅　74.0
+                                height: iconSize - 24.0,//20.0
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.grey,
@@ -2032,9 +2037,9 @@ class _HomePageState extends State<HomePage>
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                   ),
-                                  child: const Text("通話履歴",
+                                  child: const Text("通話",//2024削除
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 18,//16
                                       color: Colors.white,
                                     ),),
                                   onPressed: () async {
