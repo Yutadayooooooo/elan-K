@@ -1,6 +1,7 @@
 import 'dart:convert';
 import "package:intl/intl.dart";
 import 'package:intl/date_symbol_data_local.dart';
+import 'dart:io';
 
 class AppDefine {
   // static final baseURL = 'https://mcs-a.com/frinurse/';
@@ -11,7 +12,40 @@ class AppDefine {
   static const elanApp = true;
   static const _amiApp = true;
   static bool get amiApp => _amiApp;
-  static bool room = true;
+
+  // デバイスの画面サイズに基づいて自動判定
+  static bool get room => _isTablet();
+
+  // タブレット判定ロジック
+  static bool _isTablet() {
+    // プラットフォーム別の判定
+    if (Platform.isIOS) {
+      // iOS: iPadかどうかの判定は実行時に行う必要があるため、
+      // 初期値としてtrueを返し、実際の判定は初期化時に行う
+      return _tabletMode ?? true;
+    } else if (Platform.isAndroid) {
+      // Android: 画面サイズベースで判定
+      return _tabletMode ?? true;
+    } else {
+      // その他のプラットフォーム（デスクトップなど）
+      return true;
+    }
+  }
+
+  // 実行時に設定される値
+  static bool? _tabletMode;
+
+  // 初期化時にデバイスタイプを設定
+  static void setDeviceType(
+      {required double screenWidth, required double screenHeight}) {
+    // 画面の短辺が600px以上、またはアスペクト比が1.6以下の場合はタブレット
+    final shortSide = screenWidth < screenHeight ? screenWidth : screenHeight;
+    final aspectRatio = screenWidth > screenHeight
+        ? screenWidth / screenHeight
+        : screenHeight / screenWidth;
+
+    _tabletMode = shortSide >= 600 || aspectRatio <= 1.6;
+  }
 
   // ライブ画像アップロード
   static bool useWebLiveImage = false;
