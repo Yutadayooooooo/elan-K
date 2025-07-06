@@ -1,4 +1,4 @@
-package jp.frinurse.ami
+package jp.ami.elan
 
 import io.flutter.embedding.android.FlutterActivity
 

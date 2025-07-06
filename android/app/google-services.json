@@ -3,7 +3,7 @@
     "project_number": "871225930361",
     "firebase_url": "https://frinurse.firebaseio.com",
     "project_id": "frinurse",
-    "storage_bucket": "frinurse.appspot.com"
+    "storage_bucket": "frinurse.firebasestorage.app"
   },
   "client": [
     {
@@ -20,6 +20,9 @@
         }
       ],
       "api_key": [
+        {
+          "current_key": "AIzaSyA-CXOGSI5Wd093lpoVMSEFOYO1IVDWw_Q"
+        },
         {
           "current_key": "AIzaSyCS0SggiaEB61WiKbI20nbI7k5ZsnV0_XM"
         }
@@ -65,6 +68,9 @@
       ],
       "api_key": [
         {
+          "current_key": "AIzaSyA-CXOGSI5Wd093lpoVMSEFOYO1IVDWw_Q"
+        },
+        {
           "current_key": "AIzaSyCS0SggiaEB61WiKbI20nbI7k5ZsnV0_XM"
         }
       ],
@@ -101,49 +107,8 @@
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyCS0SggiaEB61WiKbI20nbI7k5ZsnV0_XM"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "871225930361-sr779sas5334ctvdsjl04orlddhf91vf.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "871225930361-132vvkuijiop11popln21di60hkqlmfm.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "jp.co.dellainc.push1"
-              }
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:871225930361:android:f9d72a1574c135d6931aa8",
-        "android_client_info": {
-          "package_name": "com.igirisu_net.app"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "871225930361-h2vcampang21ienvqg35er6mvvrq3pkb.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.igirisu_net.app",
-            "certificate_hash": "12781ac62c25a6d0f53976b63f1c99aa57280fc6"
-          }
+          "current_key": "AIzaSyA-CXOGSI5Wd093lpoVMSEFOYO1IVDWw_Q"
         },
-        {
-          "client_id": "871225930361-sr779sas5334ctvdsjl04orlddhf91vf.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
         {
           "current_key": "AIzaSyCS0SggiaEB61WiKbI20nbI7k5ZsnV0_XM"
         }
@@ -189,6 +154,48 @@
       ],
       "api_key": [
         {
+          "current_key": "AIzaSyA-CXOGSI5Wd093lpoVMSEFOYO1IVDWw_Q"
+        },
+        {
+          "current_key": "AIzaSyCS0SggiaEB61WiKbI20nbI7k5ZsnV0_XM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "871225930361-sr779sas5334ctvdsjl04orlddhf91vf.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "871225930361-132vvkuijiop11popln21di60hkqlmfm.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "jp.co.dellainc.push1"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:871225930361:android:566662c78b6ff23a931aa8",
+        "android_client_info": {
+          "package_name": "jp.ami.elan"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "871225930361-sr779sas5334ctvdsjl04orlddhf91vf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA-CXOGSI5Wd093lpoVMSEFOYO1IVDWw_Q"
+        },
+        {
           "current_key": "AIzaSyCS0SggiaEB61WiKbI20nbI7k5ZsnV0_XM"
         }
       ],
@@ -224,6 +231,9 @@
         }
       ],
       "api_key": [
+        {
+          "current_key": "AIzaSyA-CXOGSI5Wd093lpoVMSEFOYO1IVDWw_Q"
+        },
         {
           "current_key": "AIzaSyCS0SggiaEB61WiKbI20nbI7k5ZsnV0_XM"
         }
@@ -261,6 +271,9 @@
       ],
       "api_key": [
         {
+          "current_key": "AIzaSyA-CXOGSI5Wd093lpoVMSEFOYO1IVDWw_Q"
+        },
+        {
           "current_key": "AIzaSyCS0SggiaEB61WiKbI20nbI7k5ZsnV0_XM"
         }
       ],
@@ -297,6 +310,9 @@
       ],
       "api_key": [
         {
+          "current_key": "AIzaSyA-CXOGSI5Wd093lpoVMSEFOYO1IVDWw_Q"
+        },
+        {
           "current_key": "AIzaSyCS0SggiaEB61WiKbI20nbI7k5ZsnV0_XM"
         }
       ],
@@ -332,6 +348,9 @@
         }
       ],
       "api_key": [
+        {
+          "current_key": "AIzaSyA-CXOGSI5Wd093lpoVMSEFOYO1IVDWw_Q"
+        },
         {
           "current_key": "AIzaSyCS0SggiaEB61WiKbI20nbI7k5ZsnV0_XM"
         }

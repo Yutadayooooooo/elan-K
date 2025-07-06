@@ -65,7 +65,8 @@ class DefaultFirebaseOptions {
     projectId: 'frinurse',
     databaseURL: 'https://frinurse.firebaseio.com',
     storageBucket: 'frinurse.appspot.com',
-    androidClientId: '871225930361-b4au5v3tkjqmgrencu5p2e2lkeutsfhr.apps.googleusercontent.com',
-    iosBundleId: 'jp.frinurse.ami',
+    androidClientId:
+        '871225930361-b4au5v3tkjqmgrencu5p2e2lkeutsfhr.apps.googleusercontent.com',
+    iosBundleId: 'jp.ami.elan',
   );
 }
