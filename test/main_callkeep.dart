@@ -27,7 +27,7 @@ final callSetup = <String, dynamic>{
     'okButton': 'ok',
     // Required to get audio in background when using Android 11
     'foregroundService': {
-      'channelId': 'jp.frinurse.ami',
+      'channelId': 'jp.ami.elan',
       'channelName': 'Foreground service for my app',
       'notificationTitle': 'My app is running on background',
       'notificationIcon': 'mipmap/ic_notification_launcher',
@@ -55,8 +55,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   if (!_callKeepStarted) {
     try {
-      await _callKeep.setup(null, callSetup,
-          backgroundMode: true);
+      await _callKeep.setup(null, callSetup, backgroundMode: true);
       _callKeepStarted = true;
     } catch (e) {
       print(e);
@@ -84,7 +83,6 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   _callKeep.on(CallKeepPerformEndCallAction(), (event) {
     print('backgroundMessage: CallKeepPerformEndCallAction ${event.callUUID}');
   });
-
 
   print('backgroundMessage: displayIncomingCall ($callerId)');
   _callKeep.displayIncomingCall(
@@ -133,15 +131,15 @@ Future<dynamic> myBackgroundMessageHandler(RemoteMessage message) {
           'android': {
             'alertTitle': 'Permissions required',
             'alertDescription':
-            'This application needs to access your phone accounts',
+                'This application needs to access your phone accounts',
             'cancelButton': 'Cancel',
             'okButton': 'ok',
             'foregroundService': {
-              'channelId': 'com.company.my',
+              'channelId': 'jp.ami.elan',
               'channelName': 'Foreground service for my app',
               'notificationTitle': 'My app is running on background',
               'notificationIcon':
-              'Path to the resource icon of the notification',
+                  'Path to the resource icon of the notification',
             },
           },
         },
@@ -174,7 +172,6 @@ Future<dynamic> myBackgroundMessageHandler(RemoteMessage message) {
   */
   return Future.value(null);
 }
-
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -359,7 +356,7 @@ class _MyAppState extends State<HomePage> {
         'cancelButton': 'Cancel',
         'okButton': 'ok',
         'foregroundService': {
-          'channelId': 'com.company.my',
+          'channelId': 'jp.ami.elan',
           'channelName': 'Foreground service for my app',
           'notificationTitle': 'My app is running on background',
           'notificationIcon': 'Path to the resource icon of the notification',
@@ -391,9 +388,11 @@ class _MyAppState extends State<HomePage> {
     _callKeep.on(CallKeepDidDisplayIncomingCall(), didDisplayIncomingCall);
     _callKeep.on(CallKeepPerformAnswerCallAction(), answerCall);
     _callKeep.on(CallKeepDidPerformDTMFAction(), didPerformDTMFAction);
-    _callKeep.on(CallKeepDidReceiveStartCallAction(), didReceiveStartCallAction);
+    _callKeep.on(
+        CallKeepDidReceiveStartCallAction(), didReceiveStartCallAction);
     _callKeep.on(CallKeepDidToggleHoldAction(), didToggleHoldCallAction);
-    _callKeep.on(CallKeepDidPerformSetMutedCallAction(), didPerformSetMutedCallAction);
+    _callKeep.on(
+        CallKeepDidPerformSetMutedCallAction(), didPerformSetMutedCallAction);
     _callKeep.on(CallKeepPerformEndCallAction(), endCall);
     _callKeep.on(CallKeepPushKitToken(), onPushKitToken);
     _callKeep.setup(context, callSetup);

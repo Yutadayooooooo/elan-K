@@ -67,15 +67,15 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
           'android': {
             'alertTitle': 'Permissions required',
             'alertDescription':
-            'This application needs to access your phone accounts',
+                'This application needs to access your phone accounts',
             'cancelButton': 'Cancel',
             'okButton': 'ok',
             'foregroundService': {
-              'channelId': 'com.company.my',
+              'channelId': 'jp.ami.elan',
               'channelName': 'Foreground service for my app',
               'notificationTitle': 'My app is running on background',
               'notificationIcon':
-              'Path to the resource icon of the notification',
+                  'Path to the resource icon of the notification',
             },
           },
         },
@@ -130,15 +130,15 @@ Future<dynamic> myBackgroundMessageHandler(RemoteMessage message) {
           'android': {
             'alertTitle': 'Permissions required',
             'alertDescription':
-            'This application needs to access your phone accounts',
+                'This application needs to access your phone accounts',
             'cancelButton': 'Cancel',
             'okButton': 'ok',
             'foregroundService': {
-              'channelId': 'com.company.my',
+              'channelId': 'jp.ami.elan',
               'channelName': 'Foreground service for my app',
               'notificationTitle': 'My app is running on background',
               'notificationIcon':
-              'Path to the resource icon of the notification',
+                  'Path to the resource icon of the notification',
             },
           },
         },
@@ -267,7 +267,9 @@ class _MyAppState extends State<HomePage> {
     print('[didPerformDTMFAction] ${event.callUUID}, digits: ${event.digits}');
   }
 
-  Future<void> didReceiveStartCallAction(CallKeepDidReceiveStartCallAction event,) async {
+  Future<void> didReceiveStartCallAction(
+    CallKeepDidReceiveStartCallAction event,
+  ) async {
     final call = event;
     if (call.handle == null) {
       // @TODO: sometime we receive `didReceiveStartCallAction` with handle` undefined`
@@ -287,7 +289,8 @@ class _MyAppState extends State<HomePage> {
     });
   }
 
-  Future<void> didPerformSetMutedCallAction(CallKeepDidPerformSetMutedCallAction event) async {
+  Future<void> didPerformSetMutedCallAction(
+      CallKeepDidPerformSetMutedCallAction event) async {
     final String number = calls[event.callUUID]!.number;
     print(
         '[didPerformSetMutedCallAction] ${event.callUUID}, number: $number (${event.muted})');
@@ -295,7 +298,8 @@ class _MyAppState extends State<HomePage> {
     setCallMuted(event.callUUID!, event.muted!);
   }
 
-  Future<void> didToggleHoldCallAction(CallKeepDidToggleHoldAction event) async {
+  Future<void> didToggleHoldCallAction(
+      CallKeepDidToggleHoldAction event) async {
     final String number = calls[event.callUUID]!.number;
     print(
         '[didToggleHoldCallAction] ${event.callUUID}, number: $number (${event.hold})');
@@ -357,7 +361,7 @@ class _MyAppState extends State<HomePage> {
         'cancelButton': 'Cancel',
         'okButton': 'ok',
         'foregroundService': {
-          'channelId': 'com.company.my',
+          'channelId': 'jp.ami.elan',
           'channelName': 'Foreground service for my app',
           'notificationTitle': 'My app is running on background',
           'notificationIcon': 'Path to the resource icon of the notification',
@@ -407,7 +411,7 @@ class _MyAppState extends State<HomePage> {
         'cancelButton': 'Cancel',
         'okButton': 'ok',
         'foregroundService': {
-          'channelId': 'jp.frinurse.ami',
+          'channelId': 'jp.ami.elan',
           'channelName': 'Foreground service for my app',
           'notificationId': 5005,
           'notificationTitle': 'My app is running on background',
@@ -453,7 +457,6 @@ class _MyAppState extends State<HomePage> {
         }
       });
     });
-
   }
 
   Widget buildCallingWidgets() {
