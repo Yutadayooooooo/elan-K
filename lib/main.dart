@@ -13,7 +13,7 @@ void main() async {
   // 画面サイズを取得してデバイスタイプを判定
   final window = WidgetsBinding.instance.window;
   final size = window.physicalSize / window.devicePixelRatio;
-  AppDefine.setDeviceType(
+  await AppDefine.setDeviceType(
     screenWidth: size.width,
     screenHeight: size.height,
   );

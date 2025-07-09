@@ -2,6 +2,7 @@ import 'dart:convert';
 import "package:intl/intl.dart";
 import 'package:intl/date_symbol_data_local.dart';
 import 'dart:io';
+import 'package:device_info_plus/device_info_plus.dart';
 
 class AppDefine {
   // static final baseURL = 'https://mcs-a.com/frinurse/';
@@ -36,14 +37,27 @@ class AppDefine {
   static bool? _tabletMode;
 
   // 初期化時にデバイスタイプを設定
-  static void setDeviceType(
-      {required double screenWidth, required double screenHeight}) {
-    // 画面の短辺が600px以上、またはアスペクト比が1.6以下の場合はタブレット
+  static Future<void> setDeviceType(
+      {required double screenWidth, required double screenHeight}) async {
     final shortSide = screenWidth < screenHeight ? screenWidth : screenHeight;
     final aspectRatio = screenWidth > screenHeight
         ? screenWidth / screenHeight
         : screenHeight / screenWidth;
 
+    if (Platform.isAndroid) {
+      final deviceInfo = DeviceInfoPlugin();
+      final androidInfo = await deviceInfo.androidInfo;
+
+      // GT-10S-WHを強制的にタブレット扱いにする
+      if (androidInfo.model == 'GT-10S-WH' ||
+          androidInfo.model.contains('GT-10S') ||
+          androidInfo.product == 'GT-10S-WH') {
+        _tabletMode = true;
+        return;
+      }
+    }
+
+    // 通常の判定ロジック
     _tabletMode = shortSide >= 600 || aspectRatio <= 1.6;
   }
 
