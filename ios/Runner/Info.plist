@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Elan</string>
+	<string>Ami</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>elan</string>
+	<string>ami</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -45,5 +45,36 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	
+	<!-- プライバシー権限 -->
+	<key>NSCameraUsageDescription</key>
+	<string>このアプリはビデオ通話でカメラを使用します</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>このアプリは音声通話でマイクを使用します</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>このアプリは位置情報を使用してサービスを提供します</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>このアプリは位置情報を使用してサービスを提供します</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>このアプリは写真ライブラリにアクセスして画像を選択します</string>
+	<key>NSContactsUsageDescription</key>
+	<string>このアプリは連絡先にアクセスして通話機能を提供します</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>このアプリはカレンダーにアクセスしてスケジュール機能を提供します</string>
+	
+	<!-- プッシュ通知設定 -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>background-processing</string>
+		<string>remote-notification</string>
+		<string>voip</string>
+		<string>background-fetch</string>
+	</array>
+	
+	<!-- ステータスバーを非表示 -->
+	<key>UIStatusBarHidden</key>
+	<true/>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
 </dict>
 </plist>
