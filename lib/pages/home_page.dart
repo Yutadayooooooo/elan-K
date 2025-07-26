@@ -3,13 +3,11 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:ami/app_router.dart';
+import 'package:ami/helpers/staff_helper.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_callkit_incoming/entities/call_kit_params.dart';
-import 'package:flutter_callkit_incoming/entities/ios_params.dart';
-import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,7 +16,6 @@ import 'package:uuid/uuid.dart';
 
 import '../app_define.dart';
 import '../app_manager.dart';
-import '../helpers/staff_helper.dart';
 import '../helpers/widget_helper.dart';
 import '../models/address_model.dart';
 import '../notifiers/address_notifier.dart';
@@ -76,7 +73,6 @@ class _HomePageState extends State<HomePage>
     socketservice.delegate = this;
     sensorService.delegate = this;
     AppManager.setStatusBarHidden(true);
-    // initPlatformState();
 
     Future(() async {
       var load = await AppManager.loadSetting();
@@ -122,10 +118,6 @@ class _HomePageState extends State<HomePage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // print(state);
-    // setState(() {
-    //   _notification = state;
-    // });
     if (state == AppLifecycleState.resumed) {
       print('resumed');
       if (AppManager.appsettings['SENSOR1'] == '1' ||
@@ -163,44 +155,31 @@ class _HomePageState extends State<HomePage>
   @override
   void dispose() {
     print('staff dispose');
-    // socketservice.delegate = null;
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   Future<void> _setPausedTime() async {
     final prefs = await SharedPreferences.getInstance();
-    prefs.setString('paused_time', WidgetUtil.dateFormat(DateTime.now(), 'yyyy-MM-dd H:m:ss'));
+    prefs.setString('paused_time',
+        WidgetUtil.dateFormat(DateTime.now(), 'yyyy-MM-dd H:m:ss'));
   }
 
   Future<void> _checkAccept() async {
-    var calls = await FlutterCallkitIncoming.activeCalls();
-    if (calls is List) {
-      if (calls.isNotEmpty) {
-        print('DATA: $calls');
-        AppManager.acceptId = calls[0]['id'].toString();
-      } else {
-        print('calls is empty');
-      }
+    final prefs = await SharedPreferences.getInstance();
+    final incomingCallData = prefs.getString('incoming_call_data');
+
+    if (incomingCallData != null) {
+      prefs.remove('incoming_call_data');
+      print('Processing incoming call: $incomingCallData');
     }
-    await FlutterCallkitIncoming.endAllCalls();
-    _debug += 'check accept' + '\n';
-    // final prefs = await SharedPreferences.getInstance();
-    // var acceptId = prefs.getString('accept_id');
-    _debug += 'check accept ${AppManager.acceptId}' + '\n';
-    print('check accept ${AppManager.acceptId}');
-    if (AppManager.acceptId.isNotEmpty) {
-      final address = context.read<AddressStore>().find(AppManager.acceptId);
-      if (address != null) {
-        _called(AppManager.acceptId);
-        return;
-      }
-    }
+
     setState(() {
       _ready = true;
     });
 
-    socketservice.io.emit("clients_status", [AppManager.settings['addressGroup']]);
+    socketservice.io
+        .emit("clients_status", [AppManager.settings['addressGroup']]);
     _checkCalled();
   }
 
@@ -225,62 +204,21 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<dynamic> initCurrentCall() async {
-    var calls = await FlutterCallkitIncoming.activeCalls();
-    if (calls is List) {
-      if (calls.isNotEmpty) {
-        print('DATA: $calls');
-        print(calls.length);
-        calls.forEach((call) async {
-          await FlutterCallkitIncoming.endCall(call['id']);
-        });
-      }
-    }
-    await FlutterCallkitIncoming.endAllCalls();
+    return null;
   }
 
   Future<void> _logout() async {
     var prefs = await SharedPreferences.getInstance();
     await prefs.setBool('login', false);
-    // Todo ログインページへ
   }
 
   Future<void> initPlatformState() async {
-    // // RingerMode rMode = (await RealVolume.getRingerMode()) ?? RingerMode.NORMAL;
-    // // setState(() {
-    // //   ringerMode = rMode;
-    // // });
-    // // RealVolume.onRingerModeChanged.listen((event) async {
-    // //   setState(() {
-    // //     ringerMode = event;
-    // //   });
-    // //   if (Platform.isAndroid) {
-    // //     if (selectedStreamType == StreamType.NOTIFICATION ||
-    // //         selectedStreamType == StreamType.RING) {
-    // //       double curVol =
-    // //           (await RealVolume.getCurrentVol(selectedStreamType)) ?? 0;
-    // //       setState(() {
-    // //         currentVolume = curVol;
-    // //       });
-    // //     }
-    // //   }
-    // // });
-    // RealVolume.onVolumeChanged.listen((event) {
-    //   onStreamTypeChanged(event.streamType);
-    // });
-    // onStreamTypeChanged(selectedStreamType);
     if (!mounted) return;
   }
 
   Future<void> _requestPermission() async {
     if (Platform.isAndroid) {
-      // SimplePermissions.requestPermission(Permission.WriteExternalStorage);
-      // var status = await Permission.storage.request();
-      // print(status);
-    } else if (Platform.isIOS) {
-      // SimplePermissions.requestPermission(Permission.PhotoLibrary);
-      // var status = await Permission.camera.request();
-      // print(status);
-    }
+    } else if (Platform.isIOS) {}
   }
 
   Future<Map<String, dynamic>> _getCalledData() async {
@@ -288,14 +226,15 @@ class _HomePageState extends State<HomePage>
       _loading = true;
     });
 
-
     final url = AppManager.settings['server'] + '/called';
     print(url);
 
     final dio = Dio();
-    var data = await dio.get(
+    var data = await dio
+        .get(
       url,
-    ).then((response) {
+    )
+        .then((response) {
       print(response.data);
       return response.data;
     }).catchError((err) {
@@ -349,15 +288,9 @@ class _HomePageState extends State<HomePage>
   void _loadAddress() {
     SharedPreferences.getInstance().then((prefs) {
       String? addressString = prefs.getString('address');
-      // print(addressString);
       if (addressString != null) {
         var addressJson = json.decode(addressString);
         context.read<AddressStore>().setAddressList(addressJson);
-        // var storedAddressList = Address.fromJsonList(addressJson);
-
-        // setState(() {
-        //   addressList = storedAddressList;
-        // });
       }
     });
   }
@@ -512,7 +445,6 @@ class _HomePageState extends State<HomePage>
           image = image.substring(base64Pos + 'base64,'.length);
         }
         var image64 = image.replaceAll("\r\n", "");
-        // print(image64);
         addressStore.setLiveImage(udid, image64);
       }
     });
@@ -577,7 +509,6 @@ class _HomePageState extends State<HomePage>
 
   Widget _addressCell(Address address) {
     print("addressCell ${address.id}:${address.name}");
-    // print(address.status);
 
     if (_islist) {
       return _addressListCell(address);
@@ -604,10 +535,6 @@ class _HomePageState extends State<HomePage>
           imageName = sensorImage;
         }
       } else if (address.sensor.isNotEmpty) {
-        // var sensorImage = SensorService.imageName(address.sensor);
-        // if (sensorImage.length > 0) {
-        //   imageName = sensorImage;
-        // }
       } else if (address.photo.isNotEmpty) {
         bytes = address.photoBytes();
       }
@@ -625,12 +552,7 @@ class _HomePageState extends State<HomePage>
         if (sensorImage.isNotEmpty) {
           imageName = sensorImage;
         }
-      } else if (address.sensor.isNotEmpty) {
-        // var sensorImage = SensorService.imageName(address.sensor);
-        // if (sensorImage.length > 0) {
-        //   imageName = sensorImage;
-        // }
-      }
+      } else if (address.sensor.isNotEmpty) {}
     }
 
     if ((imageName == 'assets/images/status/dummy.png' ||
@@ -685,7 +607,9 @@ class _HomePageState extends State<HomePage>
                   if (address.status == -1)
                     Opacity(
                       opacity: 0.8,
-                      child: Container(color: Colors.grey,),
+                      child: Container(
+                        color: Colors.grey,
+                      ),
                     ),
                   Positioned(
                     top: 0,
@@ -777,8 +701,6 @@ class _HomePageState extends State<HomePage>
         height: widgetHeight,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          // crossAxisAlignment: CrossAxisAlignment.baseline,
-          // textBaseline: TextBaseline.alphabetic,
           children: [
             Baseline(
               baseline: baseline,
@@ -904,8 +826,6 @@ class _HomePageState extends State<HomePage>
               height: 30.0,
               child: ElevatedButton(
                 child: Text("履歴"),
-                // color: Colors.grey,
-                // textColor: Colors.white,
                 onPressed: () async {
                   _talkHistoryButton(address);
                 },
@@ -1003,13 +923,7 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> _selectManagerAddress(Address address) async {
-    print('============================== ${address.id}');
-    if (address.userType == 'S') {
-      AppManager.callId = address.id;
-      _selectAddressConfirm(address);
-      return;
-    }
-
+    // マネージャーアドレス選択時の処理
     AppManager.selectCode = address.code;
     AppManager.selectCodeName = address.name;
     setState(() {});
@@ -1077,14 +991,6 @@ class _HomePageState extends State<HomePage>
     var url = AppDefine.baseURL +
         "talk_history.php?cd=$cd&id1=$id1&id2=$id2&na=$name";
     print(url);
-    // Todo Webviewpageへ
-    // Navigator.of(context).push(
-    //   MaterialPageRoute(
-    //     builder: (context) {
-    //       return WebviewPage(title: '通話履歴', url: url);
-    //     },
-    //   ),
-    // );
   }
 
   void _openCallStatusPopup() {
@@ -1096,7 +1002,6 @@ class _HomePageState extends State<HomePage>
 
     for (var i = 0; i < addressStore.addressList.length; i++) {
       var address = addressStore.addressList[i];
-      // print(address);
       if (address.sensors.isNotEmpty) {
         var sensorImage = SensorService.biosilverImageName(address.sensors);
         if (sensorImage == 'sensor_alert_spo2.png') {
@@ -1108,25 +1013,10 @@ class _HomePageState extends State<HomePage>
         _callStatuses.add({'address': address, 'status': 'call'});
       }
     }
-    // print(_callStatuses);
     setState(() {});
   }
 
-  Future<void> _graphButton(Address address, String sensorType) async {
-    // Todo スタッフWebページへ
-    // await Navigator.of(context).push(
-    //   MaterialPageRoute(
-    //     builder: (context) {
-    //       return StaffWebPage(
-    //         title: 'センサー',
-    //         sensorType: sensorType,
-    //         targetId: address.id,
-    //         targetName: address.name,
-    //       );
-    //     },
-    //   ),
-    // );
-  }
+  Future<void> _graphButton(Address address, String sensorType) async {}
 
   Future<void> _biosilverOnClose() async {
     print('_biosilverOnClose, ' + AppManager.selectUser!.id);
@@ -1161,7 +1051,9 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  Future<int?> _showSelectAddressConfirmDialog(BuildContext context, String message, {String title = '確認'}) async {
+  Future<int?> _showSelectAddressConfirmDialog(
+      BuildContext context, String message,
+      {String title = '確認'}) async {
     return await showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -1170,19 +1062,28 @@ class _HomePageState extends State<HomePage>
           content: Text(message),
           actions: <Widget>[
             SimpleDialogOption(
-              child: const Text('はい', style: TextStyle(fontSize: 13),),
+              child: const Text(
+                'はい',
+                style: TextStyle(fontSize: 13),
+              ),
               onPressed: () {
                 Navigator.of(context).pop(1);
               },
             ),
             SimpleDialogOption(
-              child: const Text('いいえ', style: TextStyle(fontSize: 13),),
+              child: const Text(
+                'いいえ',
+                style: TextStyle(fontSize: 13),
+              ),
               onPressed: () {
                 Navigator.of(context).pop(0);
               },
             ),
             SimpleDialogOption(
-              child: const Text('見守り', style: TextStyle(fontSize: 13),),
+              child: const Text(
+                '見守り',
+                style: TextStyle(fontSize: 13),
+              ),
               onPressed: () {
                 Navigator.of(context).pop(2);
               },
@@ -1194,7 +1095,6 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> _selectAddress(Address address) async {
-    // context.read<AppStore>().setSelectCode(address.id);
     var test = 1;
     if (test == 3) {
       await audio.call();
@@ -1223,14 +1123,8 @@ class _HomePageState extends State<HomePage>
       if (!socketservice.isConnect()) {
         return;
       }
-      socketservice.io.emit("clients_status", [AppManager.settings['addressGroup']]);
-      return;
-    }
-    if (test == 2) {
-      var currentUuid = _uuid.v4();
-      final params = AppHelper.callParams(address.id, address.id, address.name,
-          'https://fun-talk.net/amiapp/images/avater.png');
-      await FlutterCallkitIncoming.showCallkitIncoming(params);
+      socketservice.io
+          .emit("clients_status", [AppManager.settings['addressGroup']]);
       return;
     }
     print(address.id);
@@ -1253,27 +1147,10 @@ class _HomePageState extends State<HomePage>
 
     if (address.status == 9) {
       _isActive = false;
-      // Todo ライブ映像確認ページへ
-      // await Navigator.of(context)
-      //     .push(MaterialPageRoute(builder: (context) => StaffLiveViewPage()));
       _isActive = true;
       return;
     }
 
-    // Todo 通話ページへ
-    // await Navigator.of(context, rootNavigator: true)
-    //     .push(
-    //     PageRouteBuilder(
-    //       pageBuilder: (BuildContext context, Animation<double> animation1, Animation<double> animation2) {
-    //         return StaffTalkViewPage();
-    //       },
-    //       transitionDuration: Duration.zero,
-    //       reverseTransitionDuration: Duration.zero,
-    //       fullscreenDialog: true,
-    //     )
-    // );
-
-    // TODO: implement sensorService
     sensorService.clearAlert(address.id);
     if (mounted) {
       context.read<AddressStore>().setSensor(address.id, '');
@@ -1286,7 +1163,6 @@ class _HomePageState extends State<HomePage>
     socketservice.reconnect = false;
     socketservice.delegate = null;
     socketservice.disconnect();
-    // print('_disconnect');
     setState(() {
       _isconnect = false;
     });
@@ -1317,7 +1193,6 @@ class _HomePageState extends State<HomePage>
   Future<void> _checkFcm() async {
     var prefs = await SharedPreferences.getInstance();
     String? targetId = prefs.getString('fmId');
-    // print(addressString);
 
     if (targetId != null) {
       prefs.remove('fmId');
@@ -1402,7 +1277,8 @@ class _HomePageState extends State<HomePage>
     _showCalledHistory = false;
     _showCallHistory = true;
     _historyPage = 1;
-    var code = AppManager.isManager ? AppManager.selectCode : AppManager.delegatorCode;
+    var code =
+        AppManager.isManager ? AppManager.selectCode : AppManager.delegatorCode;
     _getCallLog(code);
   }
 
@@ -1416,8 +1292,6 @@ class _HomePageState extends State<HomePage>
     var id1 = AppManager.myId;
     var formData = {
       'master_id': AppManager.settings['MCSGROUPCODE'],
-      // 'code': code,
-      // 'id1': id1,
       'token': AppDefine.getDelegatorToken(),
       'page': _historyPage.toString()
     };
@@ -1463,7 +1337,8 @@ class _HomePageState extends State<HomePage>
     _showCallHistory = false;
     _historyPage = 1;
 
-    code ??= AppManager.isManager ? AppManager.selectCode : AppManager.delegatorCode;
+    code ??=
+        AppManager.isManager ? AppManager.selectCode : AppManager.delegatorCode;
 
     _getData(code);
   }
@@ -1480,7 +1355,6 @@ class _HomePageState extends State<HomePage>
     if (context.watch<AppStore>().selectCode.isNotEmpty) {}
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light.copyWith(
       statusBarBrightness: Brightness.dark,
-      // statusBarColor: Colors.blue, //or set color with: Color(0xFF0000FF)
     ));
     const iconSize = 50.0;
     var connectMyId = AppManager.myId;
@@ -1505,7 +1379,8 @@ class _HomePageState extends State<HomePage>
               icon: Icon(Icons.close)));
     }
     if (_showHistory || _showCalledHistory || _showCallHistory) {
-      appBar = WidgetUtil.appBar(_showCalledHistory ? '着信履歴' : (_showHistory ? '通話履歴' : 'コール履歴'),
+      appBar = WidgetUtil.appBar(
+          _showCalledHistory ? '着信履歴' : (_showHistory ? '通話履歴' : 'コール履歴'),
           backgroundColor: Colors.white,
           foregroundColor: Colors.black,
           leading: IconButton(
@@ -1516,14 +1391,17 @@ class _HomePageState extends State<HomePage>
                   _showCallHistory = false;
                 });
                 Future.delayed(const Duration(milliseconds: 200), () {
-                  socketservice.io.emit("clients_status", [AppManager.settings['addressGroup']]);
+                  socketservice.io.emit(
+                      "clients_status", [AppManager.settings['addressGroup']]);
                 });
               },
               icon: Icon(Icons.close)));
     }
 
     return Scaffold(
-      backgroundColor: _showHistory || _showCalledHistory || _showCallHistory ? Colors.white : Colors.black,
+      backgroundColor: _showHistory || _showCalledHistory || _showCallHistory
+          ? Colors.white
+          : Colors.black,
       appBar: appBar,
       body: SafeArea(
         child: LayoutBuilder(builder: (context, constraints) {
@@ -1557,246 +1435,319 @@ class _HomePageState extends State<HomePage>
           }
 
           var gridRatio = colWidth / colHeight;
-          var isManagerList = AppManager.isManager && AppManager.selectCode.isEmpty;
+          var isManagerList =
+              AppManager.isManager && AppManager.selectCode.isEmpty;
 
           return Stack(
             fit: StackFit.expand,
             children: [
-              !_ready ? Center(child: CircularProgressIndicator()) : Padding(
-                padding: const EdgeInsets.only(bottom: iconSize),
-                child: Consumer<AddressStore>(
-                  builder: (context, addressStore, _) {
-                    if (_showCalledHistory) {
-                      final calledList = addressStore.calledList();
+              !_ready
+                  ? Center(child: CircularProgressIndicator())
+                  : Padding(
+                      padding: const EdgeInsets.only(bottom: iconSize),
+                      child: Consumer<AddressStore>(
+                        builder: (context, addressStore, _) {
+                          if (_showCalledHistory) {
+                            final calledList = addressStore.calledList();
 
-                      return ListView.builder(
-                        itemCount: calledList.length,
-                        // + (_hasMoreTalkLogs ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index < calledList.length) {
-                            final udid = calledList[index].id;
-                            var address = calledList[index];
-                            return Column(
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
-                                  child: Row(
+                            return ListView.builder(
+                              itemCount: calledList.length,
+                              itemBuilder: (context, index) {
+                                if (index < calledList.length) {
+                                  final udid = calledList[index].id;
+                                  var address = calledList[index];
+                                  return Column(
                                     children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8.0, vertical: 4),
+                                        child: Row(
                                           children: [
-                                            Row(
-                                              children: [
-                                                WidgetUtil.middleText(WidgetUtil.dateFormat(address.calledTime, 'M/d H:m')),
-                                                const SizedBox(width: 12,),
-                                                WidgetUtil.middleText(''),
-                                              ],
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      WidgetUtil.middleText(
+                                                          WidgetUtil.dateFormat(
+                                                              address
+                                                                  .calledTime,
+                                                              'M/d H:m')),
+                                                      const SizedBox(
+                                                        width: 12,
+                                                      ),
+                                                      WidgetUtil.middleText(''),
+                                                    ],
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      WidgetUtil.middleText(
+                                                          address.name),
+                                                      const SizedBox(
+                                                        width: 12,
+                                                      ),
+                                                      WidgetUtil.middleText(
+                                                          address.userName),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
                                             ),
-                                            Row(
-                                              children: [
-                                                WidgetUtil.middleText(address.name),
-                                                const SizedBox(width: 12,),
-                                                WidgetUtil.middleText(address.userName),
-                                              ],
-                                            ),
+                                            Container(
+                                              width: 60,
+                                              child: GestureDetector(
+                                                onTap: () {
+                                                  _selectAddressConfirm(
+                                                      address);
+                                                },
+                                                child: Image.asset(
+                                                  'assets/images/status/addr_called.png',
+                                                  width: 60,
+                                                  height: 40,
+                                                ),
+                                              ),
+                                            )
                                           ],
                                         ),
                                       ),
-                                      Container(
-                                        width: 60,
-                                        child: GestureDetector(
-                                          onTap: () {
-                                            _selectAddressConfirm(address);
-                                          },
-                                          child: Image.asset(
-                                            'assets/images/status/addr_called.png',
-                                            width: 60,
-                                            height: 40,
-                                          ),
-                                        ),
-                                      )
+                                      Divider(
+                                        height: 2,
+                                      ),
                                     ],
-                                  ),
-                                ),
-                                Divider(
-                                  height: 2,
-                                ), // 区切り線を追加
-                              ],
+                                  );
+                                }
+                                return SizedBox();
+                              },
                             );
                           }
-                          if (_hasMoreTalkLogs) {
-                            // 追加の商品を取得中
-                            // _fetchProducts();
-                            return Center(child: CircularProgressIndicator());
-                          }
-                          return SizedBox();
-                        },
-                      );
-                    }
 
-                    if (_showHistory) {
-                      return ListView.builder(
-                        itemCount: _talkLogs.length,
-                        // + (_hasMoreTalkLogs ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index < _talkLogs.length) {
-                            final udid = _talkLogs[index]['id'];
-                            var address = context.read<AddressStore>().find(udid);
-                            return Column(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
-                                  color: WidgetUtil.colorFromHex(_talkLogs[index]['color']),
-                                  child: Row(
+                          if (_showHistory) {
+                            return ListView.builder(
+                              itemCount: _talkLogs.length,
+                              itemBuilder: (context, index) {
+                                if (index < _talkLogs.length) {
+                                  final udid = _talkLogs[index]['id'];
+                                  var address =
+                                      context.read<AddressStore>().find(udid);
+                                  return Column(
                                     children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8.0, vertical: 4),
+                                        color: WidgetUtil.colorFromHex(
+                                            _talkLogs[index]['color']),
+                                        child: Row(
                                           children: [
-                                            Row(
-                                              children: [
-                                                WidgetUtil.middleText(_talkLogs[index]['start'], fontSize: 24, fontWeight: FontWeight.bold),
-                                                const SizedBox(width: 12,),
-                                                WidgetUtil.middleText(_talkLogs[index]['duration'], fontSize: 24, fontWeight: FontWeight.bold),
-                                              ],
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      WidgetUtil.middleText(
+                                                          _talkLogs[index]
+                                                              ['start'],
+                                                          fontSize: 24,
+                                                          fontWeight:
+                                                              FontWeight.bold),
+                                                      const SizedBox(
+                                                        width: 12,
+                                                      ),
+                                                      WidgetUtil.middleText(
+                                                          _talkLogs[index]
+                                                              ['duration'],
+                                                          fontSize: 24,
+                                                          fontWeight:
+                                                              FontWeight.bold),
+                                                    ],
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      WidgetUtil.middleText(
+                                                          _talkLogs[index]
+                                                              ['user_name'],
+                                                          fontSize: 24,
+                                                          fontWeight:
+                                                              FontWeight.bold),
+                                                      const SizedBox(
+                                                        width: 12,
+                                                      ),
+                                                      WidgetUtil.middleText(
+                                                          _talkLogs[index]
+                                                              ['office_name'],
+                                                          fontSize: 24,
+                                                          fontWeight:
+                                                              FontWeight.bold),
+                                                    ],
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      WidgetUtil.middleText(
+                                                          _talkLogs[index]
+                                                              ['staff_name'],
+                                                          fontSize: 24,
+                                                          fontWeight:
+                                                              FontWeight.bold),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
                                             ),
-                                            Row(
-                                              children: [
-                                                WidgetUtil.middleText(_talkLogs[index]['user_name'], fontSize: 24, fontWeight: FontWeight.bold),
-                                                const SizedBox(width: 12,),
-                                                WidgetUtil.middleText(_talkLogs[index]['office_name'], fontSize: 24, fontWeight: FontWeight.bold),
-                                              ],
-                                            ),
-                                            Row(
-                                              children: [
-                                                WidgetUtil.middleText(_talkLogs[index]['staff_name'], fontSize: 24, fontWeight: FontWeight.bold),
-                                              ],
-                                            ),
+                                            Container(
+                                              width: 30,
+                                              child: address == null
+                                                  ? Container()
+                                                  : GestureDetector(
+                                                      onTap: () {
+                                                        _selectAddressConfirm(
+                                                            address);
+                                                      },
+                                                      child: Image.asset(
+                                                        'assets/images/bottom_navi/phone3.png',
+                                                        width: 40,
+                                                        height: 40,
+                                                      ),
+                                                    ),
+                                            )
                                           ],
                                         ),
                                       ),
-                                      Container(
-                                        width: 30,
-                                        child: address == null ? Container() : GestureDetector(
-                                          onTap: () {
-                                            _selectAddressConfirm(address);
-                                          },
-                                          child: Image.asset(
-                                            'assets/images/bottom_navi/phone3.png',
-                                            width: 40,
-                                            height: 40,
-                                          ),
-                                        ),
-                                      )
+                                      Divider(
+                                        height: 2,
+                                      ),
                                     ],
-                                  ),
-                                ),
-                                Divider(
-                                  height: 2,
-                                ), // 区切り線を追加
-                              ],
+                                  );
+                                }
+                                return SizedBox();
+                              },
                             );
                           }
-                          if (_hasMoreTalkLogs) {
-                            // 追加の商品を取得中
-                            // _fetchProducts();
-                            return Center(child: CircularProgressIndicator());
-                          }
-                          return SizedBox();
-                        },
-                      );
-                    }
 
-                    if (_showCallHistory) {
-                      return ListView.builder(
-                        itemCount: _callLogs.length,
-                        // + (_hasMoreTalkLogs ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index < _callLogs.length) {
-                            final udid = _callLogs[index]['id'];
-                            var address = context.read<AddressStore>().find(udid);
-                            return Column(
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
-                                  child: Row(
+                          if (_showCallHistory) {
+                            return ListView.builder(
+                              itemCount: _callLogs.length,
+                              itemBuilder: (context, index) {
+                                if (index < _callLogs.length) {
+                                  final udid = _callLogs[index]['id'];
+                                  var address =
+                                      context.read<AddressStore>().find(udid);
+                                  return Column(
                                     children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8.0, vertical: 4),
+                                        child: Row(
                                           children: [
-                                            Row(
-                                              children: [
-                                                WidgetUtil.middleText(_callLogs[index]['start'], fontSize: 24, fontWeight: FontWeight.bold),
-                                                const SizedBox(width: 12,),
-                                                WidgetUtil.middleText(''),
-                                              ],
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      WidgetUtil.middleText(
+                                                          _callLogs[index]
+                                                              ['start'],
+                                                          fontSize: 24,
+                                                          fontWeight:
+                                                              FontWeight.bold),
+                                                      const SizedBox(
+                                                        width: 12,
+                                                      ),
+                                                      WidgetUtil.middleText(''),
+                                                    ],
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      WidgetUtil.middleText(
+                                                          address == null
+                                                              ? _callLogs[index]
+                                                                  ['name']
+                                                              : address.name,
+                                                          fontSize: 24,
+                                                          fontWeight:
+                                                              FontWeight.bold),
+                                                      const SizedBox(
+                                                        width: 12,
+                                                      ),
+                                                      WidgetUtil.middleText(
+                                                          address == null
+                                                              ? ''
+                                                              : address
+                                                                  .userName,
+                                                          fontSize: 24,
+                                                          fontWeight:
+                                                              FontWeight.bold),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
                                             ),
-                                            Row(
-                                              children: [
-                                                WidgetUtil.middleText(address == null ? _callLogs[index]['name'] : address.name, fontSize: 24, fontWeight: FontWeight.bold),//20241210
-                                                const SizedBox(width: 12,),
-                                                WidgetUtil.middleText(address == null ? '' : address.userName, fontSize: 24, fontWeight: FontWeight.bold),//20241210
-                                              ],
-                                            ),
+                                            Container(
+                                              width: 30,
+                                              child: address == null
+                                                  ? Container()
+                                                  : GestureDetector(
+                                                      onTap: () {
+                                                        _selectAddressConfirm(
+                                                            address);
+                                                      },
+                                                      child: Image.asset(
+                                                        'assets/images/bottom_navi/phone3.png',
+                                                        width: 40,
+                                                        height: 40,
+                                                      ),
+                                                    ),
+                                            )
                                           ],
                                         ),
                                       ),
-                                      Container(
-                                        width: 30,
-                                        child: address == null ? Container() : GestureDetector(
-                                          onTap: () {
-                                            _selectAddressConfirm(address);
-                                          },
-                                          child: Image.asset(
-                                            'assets/images/bottom_navi/phone3.png',
-                                            width: 40,
-                                            height: 40,
-                                          ),
-                                        ),
-                                      )
+                                      Divider(
+                                        height: 2,
+                                      ),
                                     ],
-                                  ),
-                                ),
-                                Divider(
-                                  height: 2,
-                                ), // 区切り線を追加
-                              ],
+                                  );
+                                }
+                                return SizedBox();
+                              },
                             );
                           }
-                          return SizedBox();
-                        },
-                      );
-                    }
 
-                    return GridView.extent(
-                      maxCrossAxisExtent: colWidth,
-                      padding: const EdgeInsets.only(left: gridPadding, right: gridPadding, bottom: iconSize,),
-                      mainAxisSpacing: gridSpacing,
-                      crossAxisSpacing: gridSpacing,
-                      childAspectRatio: gridRatio,
-                      children: isManagerList
-                          ? addressStore
-                              .managerList()
-                              .map((data) => _managerAddressCell(data))
-                              .toList()
-                          : addressStore
-                              .staffList()
-                              .map((data) => _addressCell(data))
-                              .toList(),
-                    );
-                  },
-                ),
-              ),
+                          return GridView.extent(
+                            maxCrossAxisExtent: colWidth,
+                            padding: const EdgeInsets.only(
+                              left: gridPadding,
+                              right: gridPadding,
+                              bottom: iconSize,
+                            ),
+                            mainAxisSpacing: gridSpacing,
+                            crossAxisSpacing: gridSpacing,
+                            childAspectRatio: gridRatio,
+                            children: isManagerList
+                                ? addressStore
+                                    .managerList()
+                                    .map((data) => _managerAddressCell(data))
+                                    .toList()
+                                : addressStore
+                                    .staffList()
+                                    .map((data) => _addressCell(data))
+                                    .toList(),
+                          );
+                        },
+                      ),
+                    ),
               Positioned(
                 top: constraints.maxHeight - iconSize,
                 left: 0,
                 width: constraints.maxWidth,
                 height: iconSize,
-                // right: constraints.maxWidth,
                 child: Container(
-                  color: _showHistory || _showCalledHistory || _showCallHistory ? Colors.white : Colors.black,
+                  color: _showHistory || _showCalledHistory || _showCallHistory
+                      ? Colors.white
+                      : Colors.black,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -1825,54 +1776,6 @@ class _HomePageState extends State<HomePage>
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          // SizedBox(
-                          //   width: 64.0,
-                          //   height: iconSize - 20.0,
-                          //   child: ElevatedButton(
-                          //     style: ElevatedButton.styleFrom(
-                          //       backgroundColor: Colors.blue,
-                          //       foregroundColor: Colors.white,
-                          //       padding: const EdgeInsets.symmetric(horizontal: 2),
-                          //       shape: RoundedRectangleBorder(
-                          //         borderRadius: BorderRadius.circular(8),
-                          //       ),
-                          //     ),
-                          //     child: const Text("Web会議",
-                          //       style: TextStyle(
-                          //         fontSize: 12,
-                          //         color: Colors.white,
-                          //       ),
-                          //     ),
-                          //     onPressed: () async {
-                          //       _toMeet();
-                          //     },
-                          //   ),
-                          // ),
-                          // const SizedBox(width: 8,),
-                          // SizedBox(
-                          //   width: 50.0,
-                          //   height: iconSize - 20.0,
-                          //   child: ElevatedButton(
-                          //     style: ElevatedButton.styleFrom(
-                          //       backgroundColor: Colors.grey,
-                          //       foregroundColor: Colors.white,
-                          //       padding: EdgeInsets.symmetric(horizontal: 2),
-                          //       shape: RoundedRectangleBorder(
-                          //         borderRadius: BorderRadius.circular(8),
-                          //       ),
-                          //     ),
-                          //     child: const Text("表示",
-                          //       style: TextStyle(
-                          //         fontSize: 12,
-                          //         color: Colors.white,
-                          //       ),),
-                          //     onPressed: () async {
-                          //       setState(() {
-                          //         _islist = !_islist;
-                          //       });
-                          //     },
-                          //   ),
-                          // ),
                           if (_showHistory) ...[
                             Container(
                               width: 90.0,
@@ -1888,7 +1791,7 @@ class _HomePageState extends State<HomePage>
                                 child: WidgetUtil.basicText(
                                   'コール履歴',
                                   color: Colors.white,
-                                  fontSize: 16,//20241125追加
+                                  fontSize: 16,
                                 ),
                                 onPressed: () async {
                                   _showCallLog();
@@ -1921,7 +1824,7 @@ class _HomePageState extends State<HomePage>
                                 child: WidgetUtil.basicText(
                                   '閉じる',
                                   color: Colors.white,
-                                  fontSize: 16,//20241125追加
+                                  fontSize: 16,
                                 ),
                               ),
                             ),
@@ -1941,7 +1844,7 @@ class _HomePageState extends State<HomePage>
                                 child: WidgetUtil.basicText(
                                   '通話履歴',
                                   color: Colors.white,
-                                  fontSize: 16,//20241125追加
+                                  fontSize: 16,
                                 ),
                                 onPressed: () async {
                                   _showTalkLog();
@@ -1974,14 +1877,16 @@ class _HomePageState extends State<HomePage>
                                 child: WidgetUtil.basicText(
                                   '閉じる',
                                   color: Colors.white,
-                                  fontSize: 16,//20241125追加
+                                  fontSize: 16,
                                 ),
                               ),
                             ),
                           ],
                           if (_showCalledHistory)
                             Container(
-                              margin: EdgeInsets.only(right: 8,),
+                              margin: EdgeInsets.only(
+                                right: 8,
+                              ),
                               width: 60.0,
                               child: ElevatedButton(
                                 onPressed: () {
@@ -1990,66 +1895,81 @@ class _HomePageState extends State<HomePage>
                                   });
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Color.fromARGB(255, 64, 114, 200),
+                                  backgroundColor:
+                                      Color.fromARGB(255, 64, 114, 200),
                                   foregroundColor: Colors.white,
                                   padding: EdgeInsets.symmetric(horizontal: 4),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                 ),
-                                child: WidgetUtil.basicText('閉じる', color: Colors.white,),
+                                child: WidgetUtil.basicText(
+                                  '閉じる',
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
-                          if (!_showCalledHistory && !_showHistory && !_showCallHistory)
-                            ... [
-                              SizedBox(
-                                width: 60.0,//60 着信履歴ボタン幅　74.0
-                                height: iconSize - 24.0,//20.0
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.grey,
-                                    foregroundColor: Colors.white,
-                                    padding: EdgeInsets.symmetric(horizontal: 2),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
+                          if (!_showCalledHistory &&
+                              !_showHistory &&
+                              !_showCallHistory) ...[
+                            SizedBox(
+                              width: 60.0,
+                              height: iconSize - 24.0,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.grey,
+                                  foregroundColor: Colors.white,
+                                  padding: EdgeInsets.symmetric(horizontal: 2),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: const Text("着信",//2024　履歴削除
-                                    style: TextStyle(
-                                      fontSize: 18,//16
-                                      color: Colors.white,
-                                    ),),
-                                  onPressed: () async {
-                                    _showCalled();
-                                  },
                                 ),
-                              ),
-                              const SizedBox(width: 8,),
-                              SizedBox(
-                                width: 60.0,//通話履歴ボタン幅　74.0
-                                height: iconSize - 24.0,//20.0
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.grey,
-                                    foregroundColor: Colors.white,
-                                    padding: EdgeInsets.symmetric(horizontal: 2),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
+                                child: const Text(
+                                  "着信",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.white,
                                   ),
-                                  child: const Text("通話",//2024削除
-                                    style: TextStyle(
-                                      fontSize: 18,//16
-                                      color: Colors.white,
-                                    ),),
-                                  onPressed: () async {
-                                    _showTalkLog();
-                                  },
                                 ),
+                                onPressed: () async {
+                                  _showCalled();
+                                },
                               ),
-                            ],
-                          const SizedBox(width: 8,),
-                          if (!_showHistory && !_showCalledHistory && !_showCallHistory)
+                            ),
+                            const SizedBox(
+                              width: 8,
+                            ),
+                            SizedBox(
+                              width: 60.0,
+                              height: iconSize - 24.0,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.grey,
+                                  foregroundColor: Colors.white,
+                                  padding: EdgeInsets.symmetric(horizontal: 2),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: const Text(
+                                  "通話",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                onPressed: () async {
+                                  _showTalkLog();
+                                },
+                              ),
+                            ),
+                          ],
+                          const SizedBox(
+                            width: 8,
+                          ),
+                          if (!_showHistory &&
+                              !_showCalledHistory &&
+                              !_showCallHistory)
                             Padding(
                               padding: const EdgeInsets.only(
                                   left: 4.0, right: 4.0, top: 8.0),
@@ -2133,8 +2053,6 @@ class _HomePageState extends State<HomePage>
                 ),
                 const Center(child: CircularProgressIndicator()),
               ],
-              // if (_debug.isNotEmpty)
-              //   Center(child: Text(_debug, style: TextStyle(color: Colors.white),),),
             ],
           );
         }),
@@ -2142,9 +2060,6 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  ///
-  /// socket service
-  ///
   @override
   void onConnect() {
     var useType = "0";
@@ -2176,19 +2091,16 @@ class _HomePageState extends State<HomePage>
     String message = data['message'];
     if (message == 'from_server') {
       if (data['productName'] == '%logined') {
-        // AppManager.toast("ログイン済のアカウントです。");
-        // return;
         return;
       }
 
       setState(() {
         _isconnect = true;
       });
-      socketservice.io.emit("clients_status", [AppManager.settings['addressGroup']]);
+      socketservice.io
+          .emit("clients_status", [AppManager.settings['addressGroup']]);
       _checkFcm();
       _checkAccept();
-      // TODO: implement _checkPushSensor
-      // _checkPushSensor();
     }
 
     if (!_ready) {
@@ -2239,7 +2151,11 @@ class _HomePageState extends State<HomePage>
         final status = data["info"]["STATUS"].toString();
         final address = addressStore.find(udid);
         if (address != null) {
-          if (status == '1' || status == '2' || status == '3' || status == '4' || status == '5') {
+          if (status == '1' ||
+              status == '2' ||
+              status == '3' ||
+              status == '4' ||
+              status == '5') {
             addressStore.setCalled(udid, 0);
           }
           if (address.call == 1) {
@@ -2276,7 +2192,6 @@ class _HomePageState extends State<HomePage>
         image = image.substring(base64Pos + 'base64,'.length);
       }
       var image64 = image.replaceAll("\r\n", "");
-      // print(image64);
       addressStore.setLiveImage(udid, image64);
     } else if (message == 'call') {
       if (data["info"]["udid"] == null) {

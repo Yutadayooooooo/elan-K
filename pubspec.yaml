@@ -44,7 +44,6 @@ dependencies:
   eraser: ^2.0.2
   firebase_messaging: ^14.9.3
   firebase_core: ^2.31.1
-  flutter_callkit_incoming: ^2.0.4+1
   flutter_inappwebview: ^6.0.0
   flutter_riverpod: ^2.5.1
   flutter_webrtc: ^0.10.8

@@ -2,64 +2,12 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_callkit_incoming/entities/android_params.dart';
-import 'package:flutter_callkit_incoming/entities/call_kit_params.dart';
-import 'package:flutter_callkit_incoming/entities/ios_params.dart';
-import 'package:flutter_callkit_incoming/entities/notification_params.dart';
 
 import '../app_manager.dart';
 import '../models/address_model.dart';
 import '../services/sensor_service.dart';
 
 class AppHelper {
-
-  static CallKitParams callParams(String uuid, String id, String name, String avatar, {String? handle}) {
-
-    return CallKitParams(
-      id: uuid,
-      nameCaller: name,
-      appName: 'Ami',
-      avatar: avatar,
-      handle: handle,
-      type: 0,
-      duration: 60000,
-      textAccept: '応答',
-      textDecline: '拒否',
-      missedCallNotification: const NotificationParams(
-        showNotification: false,
-        isShowCallback: true,
-        subtitle: '不在着信',
-        callbackText: '発信',
-      ),
-      extra: <String, dynamic>{'userId': id},
-      headers: <String, dynamic>{'apiKey': 'Abc@123!', 'platform': 'flutter'},
-      android: const AndroidParams(
-        isCustomNotification: true,
-        isShowLogo: false,
-        ringtonePath: 'system _ringtone_default',
-        backgroundColor: '#2554f1',
-        // backgroundUrl: 'assets/test.png',
-        actionColor: '#4CAF50',
-        textColor: '#ffffff',
-      ),
-      ios: const IOSParams(
-        iconName: 'CallKitLogo',
-        handleType: '',
-        supportsVideo: true,
-        maximumCallGroups: 2,
-        maximumCallsPerCallGroup: 1,
-        audioSessionMode: 'default',
-        audioSessionActive: true,
-        audioSessionPreferredSampleRate: 44100.0,
-        audioSessionPreferredIOBufferDuration: 0.005,
-        supportsDTMF: true,
-        supportsHolding: true,
-        supportsGrouping: false,
-        supportsUngrouping: false,
-        ringtonePath: 'system_ringtone_default',
-      ),
-    );
-  }
 
   static Widget managerAddressCell(Address address, Address? tvAddress, Function selectAddress, {Widget? spo2ValueWidget}) {
     String liveText = '';

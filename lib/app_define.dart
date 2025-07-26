@@ -2,14 +2,13 @@ import 'dart:convert';
 import "package:intl/intl.dart";
 import 'package:intl/date_symbol_data_local.dart';
 import 'dart:io';
-import 'package:device_info_plus/device_info_plus.dart';
 
 class AppDefine {
   // static final baseURL = 'https://mcs-a.com/frinurse/';
   static const amiURL = 'https://fun-talk.net/amiapp/';
   static final mcsaURL = 'https://mcs-a.com/frinurse/';
   static String get baseURL => _amiApp ? amiURL : mcsaURL;
-  static const appLabel = 'このアプリ';
+  static const appLabel = 'エランK';
   static const elanApp = true;
   static const _amiApp = true;
   static bool get amiApp => _amiApp;
@@ -44,20 +43,6 @@ class AppDefine {
         ? screenWidth / screenHeight
         : screenHeight / screenWidth;
 
-    if (Platform.isAndroid) {
-      final deviceInfo = DeviceInfoPlugin();
-      final androidInfo = await deviceInfo.androidInfo;
-
-      // GT-10S-WHを強制的にタブレット扱いにする
-      if (androidInfo.model == 'GT-10S-WH' ||
-          androidInfo.model.contains('GT-10S') ||
-          androidInfo.product == 'GT-10S-WH') {
-        _tabletMode = true;
-        return;
-      }
-    }
-
-    // 通常の判定ロジック
     _tabletMode = shortSide >= 600 || aspectRatio <= 1.6;
   }
 
