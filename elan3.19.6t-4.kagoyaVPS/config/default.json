@@ -1,0 +1,17 @@
+{
+  "PRODUCT": "NZvQ8Cgy",
+  "MASTERID": "1Dnu5R)R4q",
+  "CODE": "NZvQ8Cgy",
+  "CLINICID": "",
+  "TCPPORT": "55015",
+  "UDPPORT": "55515",
+  "INADDR_ANY": true,
+  "AMI_TOKEN": "xP2tWdDbTn6cuZmCAr4FWkgqCm6WG9b8",
+  "GCM_API_KEY": "",
+  "SSLUSE": true,
+  "SSLKEY": "/var/ssl/ssl.key",
+  "SSLCERT": "/var/ssl/server.crt",
+  "SSLCA": "/var/ssl/ca.crt",
+  "FIREBASE": "/var/firebase/frinurse-firebase.json",
+  "FIREBASE2": "/var/firebase/ami-style-30957c800fa7.json"
+}
